@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">ToDoApp</string>
+    <string name="priority_default">Default</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_high">High</string>
+    <string name="deadline">To do before</string>
+    <string name="save">SAVE</string>
+    <string name="cancel">CANCEL</string>
+    <string name="delete">Delete</string>
+    <string name="priority">Priority</string>
+    <string name="text_field">What need to do…</string>
+    <string name="close">Close</string>
+    <string name="add">Add</string>
+    <string name="new_item">New</string>
+    <string name="todo_title">My cases</string>
+    <string name="done_count">Done — %1$d</string>
+    <string name="show">Show</string>
+    <string name="hide">Hide</string>
+    <string name="info">Info</string>
+    <string name="select_date">Select date</string>
+    <string name="ok">OK</string>
+
+
+
+</resources>
