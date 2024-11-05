@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,8 @@ internal fun TodoListToolbar(
     doneCount: Int?,
     filterState: TodoListUiState.FilterState?,
     onFilterChange: (TodoListUiState.FilterState) -> Unit,
+    darkTheme: Boolean,
+    onThemeChange: () -> Unit
 ) {
     val countColor = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -71,12 +74,11 @@ internal fun TodoListToolbar(
             .padding(top = topPadding)
             .setShadow(progress),
         windowInsets = WindowInsets(
-            top = 4.dp,
-            bottom = 4.dp,
-            left = 60.dp
+            left = 0.dp,
+            top = 0.dp,
+            right = 0.dp,
+            bottom = 4.dp
         ),
-//            .windowInsetsPadding(WindowInsets.systemBars),
-
         title = {
             Column {
                 Row(
@@ -88,12 +90,19 @@ internal fun TodoListToolbar(
                         text = stringResource(id = R.string.todo_title),
                         fontSize = textSize,
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = 60.dp)
                     )
                     if (progress < 0.5f) {
-                        FilterIconButton(
-                            filterState = filterState,
-                            onFilterChange = onFilterChange
-                        )
+                        Row {
+                            ThemeIconButton(
+                                darkTheme = darkTheme,
+                                onThemeChange = onThemeChange
+                            )
+                            FilterIconButton(
+                                filterState = filterState,
+                                onFilterChange = onFilterChange
+                            )
+                        }
                     }
                 }
                 if (doneCount != null && progress > 0.5f) {
@@ -106,11 +115,18 @@ internal fun TodoListToolbar(
                             text = stringResource(id = R.string.done_count, doneCount),
                             color = countColor,
                             style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 60.dp)
                         )
-                        FilterIconButton(
-                            filterState = filterState,
-                            onFilterChange = onFilterChange
-                        )
+                        Row {
+                            ThemeIconButton(
+                                darkTheme = darkTheme,
+                                onThemeChange = onThemeChange
+                            )
+                            FilterIconButton(
+                                filterState = filterState,
+                                onFilterChange = onFilterChange
+                            )
+                        }
                     }
                 }
             }
@@ -195,3 +211,25 @@ private fun FilterIconButton(
     }
 }
 
+@Composable
+private fun ThemeIcon(darkTheme: Boolean) {
+    Icon(
+        painter = painterResource(id = if (darkTheme) R.drawable.light_mode else R.drawable.night_mode),
+        contentDescription = stringResource(
+            id = if (darkTheme) R.string.light_theme else R.string.dark_theme
+        ),
+        tint = MaterialTheme.colorScheme.primaryContainer
+    )
+}
+
+@Composable
+private fun ThemeIconButton(
+    darkTheme: Boolean,
+    onThemeChange: () -> Unit
+) {
+    IconButton(
+        onClick = onThemeChange
+    ) {
+        ThemeIcon(darkTheme = darkTheme)
+    }
+}

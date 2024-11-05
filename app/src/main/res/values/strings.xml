@@ -20,6 +20,8 @@
     <string name="select_date">Select date</string>
     <string name="ok">OK</string>
     <string name="checked">checked</string>
+    <string name="light_theme">Light theme</string>
+    <string name="dark_theme">Dark theme</string>
 
 
 

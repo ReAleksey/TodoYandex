@@ -5,7 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
 import androidx.navigation.compose.rememberNavController
 import com.example.todoapp.ui.theme.ToDoAppTheme
 import com.example.todoapp.viewmodel.EditTodoItemViewModel
@@ -17,14 +19,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            ToDoAppTheme {
-                TodoComposeApp()
+            // Определяем начальное значение темы
+            val systemDarkTheme = isSystemInDarkTheme()
+            var darkTheme by remember { mutableStateOf(systemDarkTheme) }
+
+            ToDoAppTheme(darkTheme = darkTheme) {
+                TodoComposeApp(
+                    darkTheme = darkTheme,
+                    onThemeChange = { darkTheme = !darkTheme }
+                )
             }
         }
     }
 
     @Composable
-    fun TodoComposeApp() {
+    fun TodoComposeApp(darkTheme: Boolean, onThemeChange: () -> Unit) {
         val navController = rememberNavController()
         val listViewModel: TodoListViewModel by viewModels { TodoListViewModel.Factory }
         val editItemViewModel: EditTodoItemViewModel by viewModels { EditTodoItemViewModel.Factory }
@@ -32,7 +41,9 @@ class MainActivity : ComponentActivity() {
         NavGraph(
             navController = navController,
             listViewModel = listViewModel,
-            editItemViewModel = editItemViewModel
+            editItemViewModel = editItemViewModel,
+            darkTheme = darkTheme,
+            onThemeChange = onThemeChange
         )
     }
 }

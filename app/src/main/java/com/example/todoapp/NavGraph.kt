@@ -21,7 +21,9 @@ import com.example.todoapp.viewmodel.TodoListViewModel
 fun NavGraph(
     navController: NavHostController,
     listViewModel: TodoListViewModel,
-    editItemViewModel: EditTodoItemViewModel
+    editItemViewModel: EditTodoItemViewModel,
+    darkTheme: Boolean,
+    onThemeChange: () -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -45,7 +47,9 @@ fun NavGraph(
                 viewModel = listViewModel,
                 toEditItemScreen = { id ->
                     navController.navigate(EditTodoItem(id)) { launchSingleTop = true }
-                }
+                },
+                darkTheme = darkTheme,
+                onThemeChange = onThemeChange
             )
         }
         composable<EditTodoItem>(

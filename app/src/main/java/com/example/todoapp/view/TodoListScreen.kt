@@ -47,10 +47,12 @@ data object TodoList
 @Composable
 fun TodoListScreen(
     viewModel: TodoListViewModel,
-    toEditItemScreen: (itemId: String?) -> Unit
+    toEditItemScreen: (itemId: String?) -> Unit,
+    darkTheme: Boolean,
+    onThemeChange: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val lazyListState = rememberLazyListState()
+    val lazyListState = rememberLazyListState() // Возвращаем lazyListState
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -63,6 +65,8 @@ fun TodoListScreen(
                 doneCount = (uiState as? TodoListUiState.Loaded)?.doneCount,
                 filterState = (uiState as? TodoListUiState.Loaded)?.filterState,
                 onFilterChange = viewModel::onFilterChange,
+                darkTheme = darkTheme,
+                onThemeChange = onThemeChange
             )
         },
         floatingActionButton = {
@@ -88,8 +92,8 @@ fun TodoListScreen(
                             end = 8.dp,
                             top = paddingValue.calculateTopPadding()
                         ),
-                    userScrollEnabled = true,
-                    state = lazyListState
+                    state = lazyListState,
+                    userScrollEnabled = true
                 ) {
                         item {
                             Spacer(modifier = Modifier.height(5.dp))
