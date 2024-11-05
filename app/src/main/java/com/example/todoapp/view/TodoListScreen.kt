@@ -20,12 +20,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import com.example.todoapp.view.items.BoxWithSidesForShadow
 import com.example.todoapp.R
@@ -39,6 +42,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object TodoList
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoListScreen(
     viewModel: TodoListViewModel,
@@ -46,9 +51,20 @@ fun TodoListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lazyListState = rememberLazyListState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TodoListToolbar(
+                scrollBehavior = scrollBehavior,
+                topPadding = 0.dp,
+                doneCount = (uiState as? TodoListUiState.Loaded)?.doneCount,
+                filterState = (uiState as? TodoListUiState.Loaded)?.filterState,
+                onFilterChange = viewModel::onFilterChange,
+            )
+        },
         floatingActionButton = {
             if (uiState is TodoListUiState.Loaded)
                 FloatingActionButton(
@@ -60,28 +76,21 @@ fun TodoListScreen(
                     Icon(Icons.Filled.Add, contentDescription = stringResource(id = R.string.add))
                 }
         }
-    )
-    { paddingValue ->
-        TodoListToolbar(
-            topPadding = paddingValue.calculateTopPadding(),
-            doneCount = (uiState as? TodoListUiState.Loaded)?.doneCount,
-            filterState = (uiState as? TodoListUiState.Loaded)?.filterState,
-            onFilterChange = viewModel::onFilterChange,
-            lazyListState = lazyListState
-        ) {
-            when (uiState) {
-                is TodoListUiState.Loaded -> {
-                    val state = uiState as TodoListUiState.Loaded
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 8.dp,
-                                end = 8.dp
-                            ),
-                        userScrollEnabled = true,
-                        state = lazyListState
-                    ) {
+    ) { paddingValue ->
+        when (uiState) {
+            is TodoListUiState.Loaded -> {
+                val state = uiState as TodoListUiState.Loaded
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = 8.dp,
+                            end = 8.dp,
+                            top = paddingValue.calculateTopPadding()
+                        ),
+                    userScrollEnabled = true,
+                    state = lazyListState
+                ) {
                         item {
                             Spacer(modifier = Modifier.height(5.dp))
                         }
@@ -168,13 +177,10 @@ fun TodoListScreen(
                         }
 
                         item {
-                            Spacer(modifier = Modifier.height(32.dp))
-                        }
-                    }
+                            Spacer(modifier = Modifier.height(32.dp)) }
                 }
-
-                else -> {}
             }
+            else -> {}
         }
     }
 }
