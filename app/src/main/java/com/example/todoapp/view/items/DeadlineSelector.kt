@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter
 import android.app.DatePickerDialog
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
@@ -34,8 +35,14 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.todoapp.R
 import java.time.Instant
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.todoapp.ui.theme.ToDoAppTheme
+import java.time.format.FormatStyle
 import java.util.Date
 
 
@@ -199,6 +206,30 @@ private fun ComposeDatePickerDialog(
                     )
                 }
             }
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ComposeDatePickerDialogLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        ComposeDatePickerDialog(
+            initialDate = LocalDate.now(),
+            onDateSelected = {},
+            onDismiss = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ComposeDatePickerDialogDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        ComposeDatePickerDialog(
+            initialDate = LocalDate.now(),
+            onDateSelected = {},
+            onDismiss = {}
         )
     }
 }

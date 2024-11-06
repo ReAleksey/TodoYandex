@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.todoapp.view.items.DeadlineItem
 import com.example.todoapp.view.items.DeleteItem
 import com.example.todoapp.view.items.PrioritySelectorItem
@@ -46,6 +47,16 @@ import com.example.todoapp.view.items.TextFieldItem
 import com.example.todoapp.utils.toLocalDate
 import com.example.todoapp.viewmodel.EditTodoItemUiState
 import com.example.todoapp.viewmodel.EditTodoItemViewModel
+import com.example.todoapp.viewmodel.TodoListViewModel
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.remember
+import com.example.todoapp.model.TodoImportance
+import com.example.todoapp.model.TodoItem
+import com.example.todoapp.model.TodoItemRepository
+import com.example.todoapp.ui.theme.ToDoAppTheme
+import com.example.todoapp.viewmodel.TodoListUiState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
 @Serializable
@@ -248,4 +259,53 @@ private fun EdiItemSeparator(
         modifier = modifier,
         color = MaterialTheme.colorScheme.outline
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditTodoItemScreenLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        EditTodoItemScreen(
+            itemId = "1",
+            viewModel = previewViewModel(),
+            onClose = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditTodoItemScreenDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        EditTodoItemScreen(
+            itemId = "1",
+            viewModel = previewViewModel(),
+            onClose = {}
+        )
+    }
+}
+
+@Composable
+private fun previewViewModel(): EditTodoItemViewModel {
+    val viewModel = EditTodoItemViewModel(
+        todoItemRepository = object : TodoItemRepository {
+            override fun getItemsFlow(): StateFlow<List<TodoItem>> =
+                MutableStateFlow(emptyList())
+
+            override suspend fun getItem(id: String): TodoItem = TodoItem(
+                id = "1",
+                text = "Тестовая заметка",
+                importance = TodoImportance.HIGH,
+                deadline = Date(),
+                isCompleted = false
+            )
+
+            override suspend fun addItem(item: TodoItem) {}
+            override suspend fun saveItem(item: TodoItem) {}
+            override suspend fun deleteItem(item: TodoItem) {}
+        }
+    )
+
+    viewModel.setItem("1")
+    return viewModel
 }

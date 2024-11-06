@@ -21,8 +21,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.todoapp.R
+import com.example.todoapp.ui.theme.ToDoAppTheme
 
 @Composable
 internal fun TextFieldItem(
@@ -77,5 +79,53 @@ internal fun TextFieldItem(
                 textStyle = MaterialTheme.typography.bodyLarge
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TextFieldItemEmptyLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        TextFieldItem(
+            text = "",
+            onChanged = {},
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF161618) // md_theme_dark_background_primary
+@Composable
+private fun TextFieldItemEmptyDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        TextFieldItem(
+            text = "",
+            onChanged = {},
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TextFieldItemLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        TextFieldItem(
+            text = "Какой-то текст для заметки",
+            onChanged = {},
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF161618) // md_theme_dark_background_primary
+@Composable
+private fun TextFieldItemDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        TextFieldItem(
+            text = "Какой-то текст для заметки",
+            onChanged = {},
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }

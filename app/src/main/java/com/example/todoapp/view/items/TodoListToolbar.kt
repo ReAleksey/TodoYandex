@@ -39,6 +39,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.todoapp.ui.theme.ToDoAppTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 
@@ -233,3 +235,40 @@ private fun ThemeIconButton(
         ThemeIcon(darkTheme = darkTheme)
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun TodoListToolbarLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        TodoListToolbar(
+            scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
+            topPadding = 0.dp,
+            doneCount = 5,
+            filterState = TodoListUiState.FilterState.ALL,
+            onFilterChange = {},
+            darkTheme = false,
+            onThemeChange = {}
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, backgroundColor = 0xFF161618)
+@Composable
+private fun TodoListToolbarDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        TodoListToolbar(
+            scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
+            topPadding = 0.dp,
+            doneCount = 5,
+            filterState = TodoListUiState.FilterState.NOT_COMPLETED,
+            onFilterChange = {},
+            darkTheme = true,
+            onThemeChange = {}
+        )
+    }
+}
+
+
+

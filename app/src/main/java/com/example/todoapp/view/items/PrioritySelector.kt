@@ -32,9 +32,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.todoapp.R
 import com.example.todoapp.model.TodoImportance
+import com.example.todoapp.ui.theme.ToDoAppTheme
 
 @Composable
 internal fun PrioritySelectorItem(
@@ -121,6 +123,44 @@ internal fun PrioritySelectorItem(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PrioritySelectorItemLightPreview() {
+    var importance by remember { mutableStateOf(TodoImportance.DEFAULT) }
+
+    ToDoAppTheme(darkTheme = false) {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(16.dp)
+        ) {
+            PrioritySelectorItem(
+                importance = importance,
+                onChanged = { importance = it }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF161618) // md_theme_dark_background_primary
+@Composable
+private fun PrioritySelectorItemDarkPreview() {
+    var importance by remember { mutableStateOf(TodoImportance.DEFAULT) }
+
+    ToDoAppTheme(darkTheme = true) {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(16.dp)
+        ) {
+            PrioritySelectorItem(
+                importance = importance,
+                onChanged = { importance = it }
+            )
         }
     }
 }

@@ -38,6 +38,16 @@ import com.example.todoapp.view.items.TodoListToolbar
 import com.example.todoapp.viewmodel.TodoListUiState
 import com.example.todoapp.viewmodel.TodoListViewModel
 import kotlinx.serialization.Serializable
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.todoapp.model.TodoImportance
+import com.example.todoapp.model.TodoItem
+import com.example.todoapp.model.TodoItemRepository
+import com.example.todoapp.model.TodoItemsRepositoryImpl
+import com.example.todoapp.ui.theme.ToDoAppTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import java.util.Date
 
 @Serializable
 data object TodoList
@@ -187,4 +197,38 @@ fun TodoListScreen(
             else -> {}
         }
     }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun TodoListScreenLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        TodoListScreen(
+            viewModel = previewViewModel(),
+            toEditItemScreen = {},
+            darkTheme = false,
+            onThemeChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TodoListScreenDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        TodoListScreen(
+            viewModel = previewViewModel(),
+            toEditItemScreen = {},
+            darkTheme = true,
+            onThemeChange = {}
+        )
+    }
+}
+
+@Composable
+private fun previewViewModel(): TodoListViewModel {
+    return TodoListViewModel(
+        todoItemRepository = TodoItemsRepositoryImpl()
+    )
 }
