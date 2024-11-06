@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Список дел</string>
+    <string name="priority_default">Обычный</string>
+    <string name="priority_low">Низкий</string>
+    <string name="priority_high">Высокий</string>
+    <string name="deadline">Сделать до</string>
+    <string name="save">СОХРАНИТЬ</string>
+    <string name="cancel">ОТМЕНА</string>
+    <string name="confirm">ГОТОВО</string>
+    <string name="delete">Удалить</string>
+    <string name="priority">Приоритет</string>
+    <string name="text_field">Что надо сделать&#8230;</string>
+    <string name="close">Закрыть</string>
+    <string name="add">Добавить</string>
+    <string name="new_item">Новое</string>
+    <string name="todo_title">Мои дела</string>
+    <string name="done_count">Выполнено — %1$d</string>
+    <string name="show">Показать</string>
+    <string name="hide">Скрыть</string>
+    <string name="info">Инфо</string>
+    <string name="select_date">Выбрать дату</string>
+    <string name="ok">ОК</string>
+    <string name="checked">Отмечено</string>
+    <string name="light_theme">Светлая тема</string>
+    <string name="dark_theme">Тёмная тема</string>
+    <string name="no">Нет</string>
+
+
+
+
+</resources>

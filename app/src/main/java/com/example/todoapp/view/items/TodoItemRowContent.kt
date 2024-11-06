@@ -1,10 +1,13 @@
 package com.example.todoapp.view.items
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
@@ -25,24 +28,29 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.todoapp.R
 import com.example.todoapp.model.TodoImportance
 import com.example.todoapp.model.TodoItem
+import com.example.todoapp.ui.theme.ToDoAppTheme
 import com.example.todoapp.utils.toLocalDate
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Date
 
 @Composable
 fun TodoItemRowContent(
     item: TodoItem,
     onChecked: (Boolean) -> Unit,
     onInfoClicked: () -> Unit,
+    onRowClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier
+            .clickable { onRowClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         ItemCheckBox(
@@ -156,9 +164,9 @@ private fun ItemCheckBox(
             CheckboxColors(
                 checkedCheckmarkColor = MaterialTheme.colorScheme.surface,
                 checkedBoxColor = MaterialTheme.colorScheme.primary,
-                uncheckedBoxColor = MaterialTheme.colorScheme.error,
+                uncheckedBoxColor = MaterialTheme.colorScheme.error.copy(alpha = 0.16f),
                 checkedBorderColor = MaterialTheme.colorScheme.primary,
-                uncheckedBorderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.16f),
+                uncheckedBorderColor = MaterialTheme.colorScheme.error,
                 uncheckedCheckmarkColor = Color.Unspecified,
                 disabledCheckedBoxColor = Color.Unspecified,
                 disabledUncheckedBoxColor = Color.Unspecified,
@@ -174,4 +182,44 @@ private fun ItemCheckBox(
                 checkmarkColor = MaterialTheme.colorScheme.surface
             )
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TodoItemRowLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        TodoItemRow(
+            item = TodoItem(
+                id = "1",
+                text = "Купить что-то",
+                importance = TodoImportance.HIGH,
+                deadline = Date(),
+                isCompleted = true,
+                createdAt = Date()
+            ),
+            onChecked = {},
+            onDeleted = {},
+            onInfoClicked = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF161618) // md_theme_dark_background_primary
+@Composable
+private fun TodoItemRowDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        TodoItemRow(
+            item = TodoItem(
+                id = "1",
+                text = "Купить что-то",
+                importance = TodoImportance.HIGH,
+                deadline = Date(),
+                isCompleted = true,
+                createdAt = Date()
+            ),
+            onChecked = {},
+            onDeleted = {},
+            onInfoClicked = {}
+        )
+    }
 }

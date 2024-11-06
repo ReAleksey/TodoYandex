@@ -35,14 +35,28 @@ import java.util.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.todoapp.view.items.DeadlineItem
 import com.example.todoapp.view.items.DeleteItem
 import com.example.todoapp.view.items.PrioritySelectorItem
 import com.example.todoapp.R
+import com.example.todoapp.utils.toDate
 import com.example.todoapp.view.items.TextFieldItem
 import com.example.todoapp.utils.toLocalDate
 import com.example.todoapp.viewmodel.EditTodoItemUiState
 import com.example.todoapp.viewmodel.EditTodoItemViewModel
+import com.example.todoapp.viewmodel.TodoListViewModel
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.remember
+import com.example.todoapp.model.TodoImportance
+import com.example.todoapp.model.TodoItem
+import com.example.todoapp.model.TodoItemRepository
+import com.example.todoapp.ui.theme.ToDoAppTheme
+import com.example.todoapp.viewmodel.TodoListUiState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
 @Serializable
@@ -60,28 +74,32 @@ fun EditTodoItemScreen(
     viewModel.setItem(itemId)
 
     val uiState by viewModel.uiState.collectAsState()
-    val scrollState = rememberScrollState()
     val focusManager = LocalFocusManager.current
-
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val appBarColor = MaterialTheme.colorScheme.background
     val scrolledAppBarColor = MaterialTheme.colorScheme.surface
 
     val topColor = remember {
-        Animatable(if (scrollState.canScrollBackward) appBarColor else scrolledAppBarColor)
+        Animatable(appBarColor)
     }
 
     val topElevation = remember {
-        androidx.compose.animation.core.Animatable(if (scrollState.canScrollBackward) 10f else 0f)
+        androidx.compose.animation.core.Animatable(0.dp.value)
     }
 
-    LaunchedEffect(scrollState.canScrollBackward) {
-        launch { topElevation.animateTo(if (scrollState.canScrollBackward) 10f else 0f) }
-        launch { topColor.animateTo(if (scrollState.canScrollBackward) scrolledAppBarColor else appBarColor) }
+    LaunchedEffect(scrollBehavior.state.collapsedFraction) {
+        val fraction = scrollBehavior.state.collapsedFraction
+        launch {
+            topElevation.animateTo(if (fraction > 0f) 3.dp.value else 0.dp.value)
+        }
+        launch {
+            topColor.animateTo(if (fraction > 0f) scrolledAppBarColor else appBarColor)
+        }
     }
 
     Scaffold(
-        modifier = Modifier
-            .windowInsetsPadding(WindowInsets.safeDrawing),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         topBar = {
@@ -109,18 +127,8 @@ fun EditTodoItemScreen(
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
-                        Spacer(modifier = Modifier.width(4.dp))
                     }
                 },
-                modifier = Modifier
-                    .shadow(
-                        elevation = topElevation.value.dp
-                    )
-                    .background(topColor.value),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(
@@ -129,76 +137,99 @@ fun EditTodoItemScreen(
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                }
+                },
+                modifier = Modifier
+                    .shadow(elevation = topElevation.value.dp)
+                    .background(topColor.value),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                ),
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValue ->
         when (uiState) {
             is EditTodoItemUiState.Loaded -> {
-                Column(
+                val state = uiState as EditTodoItemUiState.Loaded
+                LazyColumn(
                     modifier = Modifier
+                        .fillMaxSize()
                         .padding(
                             top = paddingValue.calculateTopPadding(),
                             start = 16.dp,
-                            end = 16.dp
+                            end = 16.dp,
+                            bottom = paddingValue.calculateBottomPadding()
                         )
-//                        .fillMaxHeight()
-                        .verticalScroll(scrollState)
-                        .focusable()
                 ) {
-                    val state = uiState as EditTodoItemUiState.Loaded
+                    item { Spacer(modifier = Modifier.height(4.dp)) }
 
-                    val inputShape = RoundedCornerShape(10.dp)
+                    item {
+                        TextFieldItem(
+                            text = state.item.text,
+                            onChanged = { newText ->
+                                viewModel.edit(item = state.item.copy(text = newText))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    TextFieldItem(
-                        text = state.item.text,
-                        onChanged = { newText ->
-                            viewModel.edit(item = state.item.copy(text = newText))
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(2.dp, inputShape),
-                        shape = inputShape
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    PrioritySelectorItem(
-                        importance = state.item.importance,
-                        onChanged = { importance ->
-                            viewModel.edit(state.item.copy(importance = importance))
-                        },
-                        onClick = focusManager::clearFocus,
-                    )
-                    EdiItemSeparator(
-                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                    )
-                    DeadlineItem(
-                        deadline = state.item.deadline.toLocalDate(),
-                        onChanged = { newDeadline ->
-                            viewModel.edit(state.item.copy(deadline = Date.from(
-                                newDeadline?.atStartOfDay(
-                                    ZoneId.systemDefault())?.toInstant()
-                            )))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = focusManager::clearFocus,
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                    EdiItemSeparator(
-                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                    )
-                    DeleteItem(
-                        enabled = state.itemState == EditTodoItemUiState.ItemState.EDIT,
-                        onDeleted = {
-                            viewModel.delete()
-                            onClose()
-                        },
-                        onClick = focusManager::clearFocus,
-                    )
-                    Spacer(modifier = Modifier.height(paddingValue.calculateBottomPadding()))
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+
+                    item {
+                        PrioritySelectorItem(
+                            importance = state.item.importance,
+                            onChanged = { importance ->
+                                viewModel.edit(state.item.copy(importance = importance))
+                            },
+                            onClick = focusManager::clearFocus
+                        )
+                    }
+
+                    item {
+                        EdiItemSeparator(
+                            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                        )
+                    }
+
+                    item {
+                        DeadlineItem(
+                            deadline = state.item.deadline.toLocalDate(),
+                            onChanged = { newDeadline ->
+                                viewModel.edit(
+                                    state.item.copy(
+                                        deadline = newDeadline?.toDate()
+                                    )
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = focusManager::clearFocus
+                        )
+                    }
+
+                    item { Spacer(modifier = Modifier.height(32.dp)) }
+
+                    item {
+                        EdiItemSeparator(
+                            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                        )
+                    }
+
+                    item {
+                        DeleteItem(
+                            enabled = state.itemState == EditTodoItemUiState.ItemState.EDIT,
+                            onDeleted = {
+                                viewModel.delete()
+                                onClose()
+                            },
+                            onClick = focusManager::clearFocus
+                        )
+                    }
+
+                    item { Spacer(modifier = Modifier.height(32.dp)) }
                 }
             }
-
 //            is EditTodoItemUiState.Error -> {
 //                ErrorComponent(
 //                    exception = (uiState as EditItemUiState.Error).exception,
@@ -228,4 +259,53 @@ private fun EdiItemSeparator(
         modifier = modifier,
         color = MaterialTheme.colorScheme.outline
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditTodoItemScreenLightPreview() {
+    ToDoAppTheme(darkTheme = false) {
+        EditTodoItemScreen(
+            itemId = "1",
+            viewModel = previewViewModel(),
+            onClose = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditTodoItemScreenDarkPreview() {
+    ToDoAppTheme(darkTheme = true) {
+        EditTodoItemScreen(
+            itemId = "1",
+            viewModel = previewViewModel(),
+            onClose = {}
+        )
+    }
+}
+
+@Composable
+private fun previewViewModel(): EditTodoItemViewModel {
+    val viewModel = EditTodoItemViewModel(
+        todoItemRepository = object : TodoItemRepository {
+            override fun getItemsFlow(): StateFlow<List<TodoItem>> =
+                MutableStateFlow(emptyList())
+
+            override suspend fun getItem(id: String): TodoItem = TodoItem(
+                id = "1",
+                text = "Тестовая заметка",
+                importance = TodoImportance.HIGH,
+                deadline = Date(),
+                isCompleted = false
+            )
+
+            override suspend fun addItem(item: TodoItem) {}
+            override suspend fun saveItem(item: TodoItem) {}
+            override suspend fun deleteItem(item: TodoItem) {}
+        }
+    )
+
+    viewModel.setItem("1")
+    return viewModel
 }
