@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import com.example.todoapp.view.items.BoxWithSidesForShadow
+import com.example.todoapp.view.items.BoxWithShadows
 import com.example.todoapp.R
 import com.example.todoapp.view.items.Sides
 import com.example.todoapp.view.items.TodoItemRow
@@ -104,7 +104,7 @@ fun TodoListScreen(
                                     topEnd = 8.dp,
                                     topStart = 8.dp
                                 )
-                                BoxWithSidesForShadow(
+                                BoxWithShadows (
                                     Sides.TOP,
                                 ) {
                                     Spacer(
@@ -132,7 +132,7 @@ fun TodoListScreen(
                                     bottomEnd = 8.dp,
                                     bottomStart = 8.dp
                                 )
-                                BoxWithSidesForShadow(
+                                BoxWithShadows (
                                     Sides.BOTTOM,
                                 ) {
                                     Row(

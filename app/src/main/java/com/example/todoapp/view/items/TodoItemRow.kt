@@ -22,7 +22,7 @@ fun TodoItemRow(
     onDeleted: () -> Unit,
     onInfoClicked: () -> Unit,
 ) {
-    BoxWithSidesForShadow(
+    BoxWithShadows(
         sides = Sides.LEFT_AND_RIGHT,
     ) {
         RowSwipe(
@@ -53,40 +53,3 @@ fun TodoItemRow(
 }
 
 
-@Composable
-internal fun BoxWithSidesForShadow(
-    sides: Sides,
-    content: @Composable () -> Unit
-) {
-    val shadowShape =
-        when (sides) {
-            Sides.LEFT_AND_RIGHT, Sides.BOTTOM -> GenericShape { size, _ ->
-                val maxSize = (size.width + size.height) * 10
-                moveTo(-maxSize, 0f)
-                lineTo(maxSize, 0f)
-                lineTo(maxSize, size.height + maxSize)
-                lineTo(0f, size.height + maxSize)
-            }
-
-            Sides.TOP -> GenericShape { size, _ ->
-                val maxSize = (size.width + size.height) * 10
-                moveTo(-maxSize, -maxSize)
-                lineTo(maxSize, -maxSize)
-                lineTo(maxSize, size.height + maxSize)
-                lineTo(0f, size.height + maxSize)
-            }
-        }
-
-    Box(
-        modifier = Modifier
-            .clip(shadowShape)
-    ) {
-        content()
-    }
-}
-
-internal enum class Sides {
-    LEFT_AND_RIGHT,
-    BOTTOM,
-    TOP
-}
