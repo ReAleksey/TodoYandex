@@ -178,13 +178,13 @@ private fun getToolbarValue(startValue: Color, endValue: Color, progress: Float)
 private fun FilterIcon(filterState: TodoListUiState.FilterState?) {
     if (filterState != null && filterState == TodoListUiState.FilterState.ALL) {
         Icon(
-            painter = painterResource(id = R.drawable.visibility),
+            painter = painterResource(id = R.drawable.visibility_off),
             contentDescription = stringResource(id = R.string.show),
             tint = MaterialTheme.colorScheme.primaryContainer
         )
     } else {
         Icon(
-            painter = painterResource(id = R.drawable.visibility_off),
+            painter = painterResource(id = R.drawable.visibility),
             contentDescription = stringResource(id = R.string.hide),
             tint = MaterialTheme.colorScheme.primaryContainer
         )

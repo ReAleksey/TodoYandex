@@ -22,13 +22,15 @@ import java.time.format.DateTimeFormatter
 import android.app.DatePickerDialog
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.todoapp.R
 import java.util.*
 
 @Composable
 internal fun DeadlineItem(
-    deadline: LocalDate?,
+    deadline: LocalDate?, // чтобы не передавать нулл сделать пустой state
     onChanged: (LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
@@ -49,7 +51,7 @@ internal fun DeadlineItem(
             TextButton(
                 onClick = {
                     onClick()
-                    if (deadline != null) {
+                    if (deadline != null) { // let конструктор
                         onChanged(null)
                     } else {
                         dialogOpened = true
@@ -60,7 +62,7 @@ internal fun DeadlineItem(
                 )
             ) {
                 Text(
-                    text = if (formattedDate.isNotEmpty()) "Selected Date: $formattedDate" else "Select Date",
+                    text = formattedDate.ifEmpty { stringResource(id = R.string.select_date) },
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -74,7 +76,15 @@ internal fun DeadlineItem(
                 } else {
                     dialogOpened = true
                 }
-            }
+            },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primaryContainer,
+                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                checkedBorderColor = Color.Transparent,
+                uncheckedThumbColor = MaterialTheme.colorScheme.surfaceVariant,
+                uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant,
+                uncheckedBorderColor = Color.Transparent
+            )
         )
     }
 

@@ -188,19 +188,3 @@ fun TodoListScreen(
         }
     }
 }
-//                is TodoListUiState.Error -> {
-//                    ErrorComponent(
-//                        exception = (uiState as TodoListUiState.Error).exception,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(paddingValue)
-//                    )
-//                }
-//
-//                TodoListUiState.Loading -> {
-//                    LoadingComponent(
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .padding(paddingValue)
-//                    )
-//                }

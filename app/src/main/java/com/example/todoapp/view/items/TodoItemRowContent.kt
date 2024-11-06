@@ -156,9 +156,9 @@ private fun ItemCheckBox(
             CheckboxColors(
                 checkedCheckmarkColor = MaterialTheme.colorScheme.surface,
                 checkedBoxColor = MaterialTheme.colorScheme.primary,
-                uncheckedBoxColor = MaterialTheme.colorScheme.error,
+                uncheckedBoxColor = MaterialTheme.colorScheme.error.copy(alpha = 0.16f),
                 checkedBorderColor = MaterialTheme.colorScheme.primary,
-                uncheckedBorderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.16f),
+                uncheckedBorderColor = MaterialTheme.colorScheme.error,
                 uncheckedCheckmarkColor = Color.Unspecified,
                 disabledCheckedBoxColor = Color.Unspecified,
                 disabledUncheckedBoxColor = Color.Unspecified,
