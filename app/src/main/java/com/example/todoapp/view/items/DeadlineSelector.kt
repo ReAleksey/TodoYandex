@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.todoapp.R
 import java.time.Instant
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import java.util.Date
 
 
@@ -177,7 +179,26 @@ private fun ComposeDatePickerDialog(
                 todayContentColor = MaterialTheme.colorScheme.primaryContainer,
                 todayDateBorderColor = Color.Transparent,
                 dividerColor = MaterialTheme.colorScheme.outline
-            )
+            ),
+            headline = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp, horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = datePickerState.selectedDateMillis?.let { millis ->
+                            Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.of("UTC"))
+                                .toLocalDate()
+                                .format(DateTimeFormatter.ofPattern("d MMMM yyyy"))
+                        } ?: "",
+                        style = MaterialTheme.typography.displayLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
         )
     }
 }
