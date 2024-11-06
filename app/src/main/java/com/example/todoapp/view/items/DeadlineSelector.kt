@@ -22,21 +22,33 @@ import java.time.format.DateTimeFormatter
 import android.app.DatePickerDialog
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DisplayMode
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.todoapp.R
-import java.util.*
+import java.time.Instant
+import androidx.compose.material3.DatePickerDialog
+import java.util.Date
+
 
 @Composable
 internal fun DeadlineItem(
-    deadline: LocalDate?, // чтобы не передавать нулл сделать пустой state
+    deadline: LocalDate?, // чтобы не передавать null сделать пустой state -> решил другим путём, чтобы не переписывать большую часть кода
     onChanged: (LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     var dialogOpened by remember { mutableStateOf(false) }
-    val formattedDate = deadline?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: ""
+    val context = LocalContext.current
+    val formattedDate = deadline?.format(
+        DateTimeFormatter.ofPattern("d MMMM yyyy", context.resources.configuration.locales[0])
+    ) ?: ""
 
     Row(
         modifier = modifier,
@@ -51,20 +63,19 @@ internal fun DeadlineItem(
             TextButton(
                 onClick = {
                     onClick()
-                    if (deadline != null) { // let конструктор
-                        onChanged(null)
-                    } else {
-                        dialogOpened = true
-                    }
+                    dialogOpened = true
                 },
+                enabled = deadline != null,
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
-                Text(
-                    text = formattedDate.ifEmpty { stringResource(id = R.string.select_date) },
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                if (deadline != null) {
+                    Text(
+                        text = formattedDate,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
         Switch(
@@ -74,7 +85,7 @@ internal fun DeadlineItem(
                 if (!isChecked) {
                     onChanged(null)
                 } else {
-                    dialogOpened = true
+                    onChanged(LocalDate.now())
                 }
             },
             colors = SwitchDefaults.colors(
@@ -89,38 +100,84 @@ internal fun DeadlineItem(
     }
 
     if (dialogOpened) {
-        showDatePickerDialog(LocalContext.current, deadline) { selectedDate ->
-            onChanged(selectedDate)
-            dialogOpened = false
-        }
+        ComposeDatePickerDialog(
+            initialDate = deadline ?: LocalDate.now(),
+            onDateSelected = { selectedDate ->
+                onChanged(selectedDate)
+                dialogOpened = false
+            },
+            onDismiss = {
+                dialogOpened = false
+            }
+        )
     }
 }
 
-private fun showDatePickerDialog(
-    context: Context,
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ComposeDatePickerDialog(
     initialDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit
+    onDateSelected: (LocalDate?) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    val calendar = Calendar.getInstance()
-    initialDate?.let {
-        calendar.set(Calendar.YEAR, it.year)
-        calendar.set(Calendar.MONTH, it.monthValue - 1)
-        calendar.set(Calendar.DAY_OF_MONTH, it.dayOfMonth)
-    }
-
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            val selectedCalendar = Calendar.getInstance()
-            selectedCalendar.set(year, month, dayOfMonth)
-            val selectedDate = selectedCalendar.time.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate()
-            onDateSelected(selectedDate)
-        },
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH)
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate?.let {
+            it.atStartOfDay(ZoneId.of("UTC"))
+                .toInstant()
+                .toEpochMilli()
+        }
     )
-    datePickerDialog.show()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedDate = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.of("UTC"))
+                            .toLocalDate()
+                        onDateSelected(selectedDate)
+                    }
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    ) {
+        DatePicker(
+            state = datePickerState,
+            showModeToggle = false,
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                headlineContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                weekdayContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                navigationContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                yearContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                currentYearContentColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedYearContentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                selectedYearContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                dayContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                selectedDayContentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                selectedDayContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                todayContentColor = MaterialTheme.colorScheme.primaryContainer,
+                todayDateBorderColor = Color.Transparent,
+                dividerColor = MaterialTheme.colorScheme.outline
+            )
+        )
+    }
 }

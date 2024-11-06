@@ -6,6 +6,7 @@
     <string name="deadline">To do before</string>
     <string name="save">SAVE</string>
     <string name="cancel">CANCEL</string>
+    <string name="confirm">CONFIRM</string>
     <string name="delete">Delete</string>
     <string name="priority">Priority</string>
     <string name="text_field">What need to do&#8230;</string>

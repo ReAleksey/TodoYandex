@@ -52,7 +52,7 @@ fun TodoListScreen(
     onThemeChange: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val lazyListState = rememberLazyListState() // Возвращаем lazyListState
+    val lazyListState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(

@@ -19,7 +19,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            // Определяем начальное значение темы
             val systemDarkTheme = isSystemInDarkTheme()
             var darkTheme by remember { mutableStateOf(systemDarkTheme) }
 

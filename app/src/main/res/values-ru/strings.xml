@@ -6,6 +6,7 @@
     <string name="deadline">Сделать до</string>
     <string name="save">СОХРАНИТЬ</string>
     <string name="cancel">ОТМЕНА</string>
+    <string name="confirm">ГОТОВО</string>
     <string name="delete">Удалить</string>
     <string name="priority">Приоритет</string>
     <string name="text_field">Что надо сделать&#8230;</string>

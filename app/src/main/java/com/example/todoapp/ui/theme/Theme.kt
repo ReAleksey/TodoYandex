@@ -29,7 +29,8 @@ private val LightColorScheme = lightColorScheme(
     onSecondaryContainer = md_theme_light_label_secondary,
     onTertiaryContainer = md_theme_light_label_tertiary,
     onSurfaceVariant = md_theme_light_label_disabled,
-    inverseOnSurface = md_white
+    inverseOnSurface = md_white,
+    surfaceTint = Color.Transparent
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -47,7 +48,8 @@ private val DarkColorScheme = darkColorScheme(
     onSecondaryContainer = md_theme_dark_label_secondary,
     onTertiaryContainer = md_theme_dark_label_tertiary,
     onSurfaceVariant = md_theme_dark_label_disabled,
-    inverseOnSurface = md_white
+    inverseOnSurface = md_white,
+    surfaceTint = Color.Transparent
 )
 
 @Composable

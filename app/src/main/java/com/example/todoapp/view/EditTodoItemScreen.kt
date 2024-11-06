@@ -39,6 +39,7 @@ import com.example.todoapp.view.items.DeadlineItem
 import com.example.todoapp.view.items.DeleteItem
 import com.example.todoapp.view.items.PrioritySelectorItem
 import com.example.todoapp.R
+import com.example.todoapp.utils.toDate
 import com.example.todoapp.view.items.TextFieldItem
 import com.example.todoapp.utils.toLocalDate
 import com.example.todoapp.viewmodel.EditTodoItemUiState
@@ -175,10 +176,11 @@ fun EditTodoItemScreen(
                     DeadlineItem(
                         deadline = state.item.deadline.toLocalDate(),
                         onChanged = { newDeadline ->
-                            viewModel.edit(state.item.copy(deadline = Date.from(
-                                newDeadline?.atStartOfDay(
-                                    ZoneId.systemDefault())?.toInstant()
-                            )))
+                            viewModel.edit(
+                                state.item.copy(
+                                    deadline = newDeadline?.toDate()
+                                )
+                            )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         onClick = focusManager::clearFocus,
