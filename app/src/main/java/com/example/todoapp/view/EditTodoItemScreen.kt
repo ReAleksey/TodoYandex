@@ -81,8 +81,7 @@ fun EditTodoItemScreen(
     }
 
     Scaffold(
-        modifier = Modifier
-            .windowInsetsPadding(WindowInsets.safeDrawing),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         topBar = {
