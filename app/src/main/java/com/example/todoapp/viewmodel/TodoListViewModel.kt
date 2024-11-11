@@ -21,24 +21,38 @@ class TodoListViewModel(
     private val todoItemRepository: TodoItemRepository
 ) : ViewModel() {
 
-    private val filterFlow = MutableStateFlow(TodoListUiState.FilterState.NOT_COMPLETED)
-    val uiState: StateFlow<TodoListUiState> =
-        todoItemRepository.getItemsFlow()
-            .combine<List<TodoItem>, TodoListUiState.FilterState, TodoListUiState>(
-                filterFlow
-            ) { list, filter ->
-                TodoListUiState.Loaded(
-                    items = list.filter(filter.filter),
-                    filterState = filter,
-                    doneCount = list.count { it.isCompleted }
-                )
-            }
-            .catch { e ->
-                Log.e("MyLog", "Todo list flow error: ${e.message ?: e.cause}")
-                emit(TodoListUiState.Error(e))
-            }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, TodoListUiState.Loading)
+    private val _uiState = MutableStateFlow<TodoListUiState>(TodoListUiState.Loading)
+    val uiState: StateFlow<TodoListUiState> = _uiState
 
+    // Define filterFlow
+    private val filterFlow = MutableStateFlow(TodoListUiState.FilterState.NOT_COMPLETED)
+
+    init {
+        viewModelScope.launch {
+            try {
+                // Synchronize data with the server
+                todoItemRepository.synchronize()
+
+                // Combine itemsFlow and filterFlow
+                todoItemRepository.getItemsFlow()
+                    .combine(filterFlow) { items, filter ->
+                        TodoListUiState.Loaded(
+                            items = items.filter(filter.filter),
+                            filterState = filter,
+                            doneCount = items.count { it.isCompleted }
+                        )
+                    }
+                    .catch { e ->
+                        _uiState.value = TodoListUiState.Error(e)
+                    }
+                    .collect { uiStateValue ->
+                        _uiState.value = uiStateValue
+                    }
+            } catch (e: Exception) {
+                _uiState.value = TodoListUiState.Error(e)
+            }
+        }
+    }
 
     fun onChecked(item: TodoItem, checked: Boolean) {
         viewModelScope.launch {

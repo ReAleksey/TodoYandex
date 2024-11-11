@@ -48,6 +48,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import java.util.Date
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 
 @Serializable
 data object TodoList
@@ -64,8 +69,16 @@ fun TodoListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val lazyListState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    // Обработка ошибок
+    LaunchedEffect(uiState) {
+        if (uiState is TodoListUiState.Error) {
+            snackbarHostState.showSnackbar("Something went wrong")
+        }
+    }
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {

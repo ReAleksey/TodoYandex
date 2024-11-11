@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.todoapp.TodoApp
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.model.TodoItemRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -22,27 +23,32 @@ class EditTodoItemViewModel(
     private val _uiState = MutableStateFlow<EditTodoItemUiState>(EditTodoItemUiState.Loading)
     val uiState: StateFlow<EditTodoItemUiState> = _uiState
 
+    private var job: Job? = null
+
     fun setItem(itemId: String?) {
-        viewModelScope.launch {
-            try {
-                val item = itemId?.let { todoItemRepository.getItem(itemId) }
-                _uiState.emit(
-                    if (item == null)
-                        EditTodoItemUiState.Loaded(
-                            TodoItem(
-                                id = UUID.randomUUID().toString(),
-                                text = ""
-                            ),
-                            EditTodoItemUiState.ItemState.NEW
-                        )
-                    else
-                        EditTodoItemUiState.Loaded(
-                            item,
-                            EditTodoItemUiState.ItemState.EDIT
-                        )
-                )
-            } catch (e: Exception) {
-                _uiState.emit(EditTodoItemUiState.Error(e))
+        job?.cancel()
+        job = viewModelScope.launch {
+            viewModelScope.launch {
+                try {
+                    val item = itemId?.let { todoItemRepository.getItem(itemId) }
+                    _uiState.emit(
+                        if (item == null)
+                            EditTodoItemUiState.Loaded(
+                                TodoItem(
+                                    id = UUID.randomUUID().toString(),
+                                    text = ""
+                                ),
+                                EditTodoItemUiState.ItemState.NEW
+                            )
+                        else
+                            EditTodoItemUiState.Loaded(
+                                item,
+                                EditTodoItemUiState.ItemState.EDIT
+                            )
+                    )
+                } catch (e: Exception) {
+                    _uiState.emit(EditTodoItemUiState.Error(e))
+                }
             }
         }
     }
@@ -86,6 +92,10 @@ class EditTodoItemViewModel(
                 )
             }
         }
+    }
+    override fun onCleared() {
+        super.onCleared()
+        job?.cancel()
     }
 }
 

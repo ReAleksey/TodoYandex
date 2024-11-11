@@ -303,6 +303,7 @@ private fun previewViewModel(): EditTodoItemViewModel {
             override suspend fun addItem(item: TodoItem) {}
             override suspend fun saveItem(item: TodoItem) {}
             override suspend fun deleteItem(item: TodoItem) {}
+            override suspend fun synchronize() {}
         }
     )
 

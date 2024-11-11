@@ -1,17 +1,24 @@
 package com.example.todoapp.model
 
+import com.example.todoapp.network.ImportanceNetwork
+import com.example.todoapp.network.NetworkModule
+import com.example.todoapp.network.TodoItemNetwork
+import com.example.todoapp.network.TodoItemRequest
+import com.example.todoapp.network.TodoListRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.time.ZoneId
-import java.util.Calendar
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.time.Instant
 import java.util.Date
-import java.util.TimeZone
 
 class TodoItemsRepositoryImpl : TodoItemRepository {
 
-    private val _itemsFlow = MutableStateFlow<List<TodoItem>>(defaultItems)
+    private val _itemsFlow = MutableStateFlow<List<TodoItem>>(emptyList())
+    private val mutex = Mutex()
+    private var revision: Int = 0
 
     override fun getItemsFlow(): StateFlow<List<TodoItem>> = _itemsFlow.asStateFlow()
 
@@ -19,180 +26,120 @@ class TodoItemsRepositoryImpl : TodoItemRepository {
         _itemsFlow.value.firstOrNull { it.id == id }
 
     override suspend fun addItem(item: TodoItem) {
-        _itemsFlow.update { state ->
-            state + listOf(
-                item.copy(
-                    id = ((state.maxOfOrNull { item -> item.id.toLong() }
-                        ?: 0L) + 1L).toString(),
-                    createdAt = Date()
-                )
+        mutex.withLock {
+            val response = NetworkModule.apiService.addTodoItem(
+                revision,
+                TodoItemRequest(item.toNetworkModel())
             )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    revision = body.revision
+                    synchronize()
+                }
+            } else {
+                // Обработка ошибок
+                throw Exception("Failed to add item")
+            }
         }
     }
 
     override suspend fun saveItem(item: TodoItem) {
-        _itemsFlow.update { state ->
-            state.map {
-                if (it.id == item.id)
-                    item.copy(modifiedAt = Date())
-                else
-                    it
+        mutex.withLock {
+            val response = NetworkModule.apiService.updateTodoItem(
+                revision,
+                item.id,
+                TodoItemRequest(item.toNetworkModel())
+            )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    revision = body.revision
+                    synchronize()
+                }
+            } else {
+                // Обработка ошибок
+                throw Exception("Failed to save item")
             }
         }
     }
 
     override suspend fun deleteItem(item: TodoItem) {
-        _itemsFlow.update { state -> state.filter { it.id != item.id } }
+        mutex.withLock {
+            val response = NetworkModule.apiService.deleteTodoItem(
+                revision,
+                item.id
+            )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    revision = body.revision
+                    synchronize()
+                }
+            } else {
+                // Обработка ошибок
+                throw Exception("Failed to delete item")
+            }
+        }
     }
 
-    companion object {
-        private fun createDate(year: Int, month: Int, day: Int): Date {
-            return Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                set(year, month - 1, day, 0, 0, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.time
+    override suspend fun synchronize() {
+        mutex.withLock {
+            val response = NetworkModule.apiService.getTodoList()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    revision = body.revision
+                    val items = body.list.map { it.toDomainModel() }
+                    _itemsFlow.emit(items)
+                }
+            } else {
+                // Обработка ошибок
+                throw Exception("Failed to synchronize")
+            }
         }
+    }
 
-        private val defaultItems = listOf(
-            TodoItem(
-                id = "1",
-                text = "Купить что-то",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 25),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "2",
-                text = "Купить что-то",
-                importance = TodoImportance.DEFAULT,
-                deadline = createDate(2024, 11, 26),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "3",
-                text = "Купить что-то, где-то, зачем-то, но зачем не очень понятно",
-                importance = TodoImportance.LOW,
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "4",
-                text = "Купить что-то, где-то, зачем-то, но зачем не очень понятно, но точно чтобы показать как обрезать текст",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 24),
-                isCompleted = true,
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "5",
-                text = "А здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \nА здесь я хочу показать как открывается длинный текст - он будет очень длинным, но повторяющимся. Это всё для того, чтобы вы увидели, что вторую страницу тоже можно прокручивать если в неё внести ооочень длинный список задач или большую заметку :) \n",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 27),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "6",
-                text = "Купить что-то, где-то, зачем-то, но зачем не очень понятно, но точно чтобы показать как обрезать текст",
-                importance = TodoImportance.DEFAULT,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "7",
-                text = "Сделать уборку",
-                importance = TodoImportance.LOW,
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "8",
-                text = "Помыть посуду",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "9",
-                text = "Закончить проект",
-                importance = TodoImportance.DEFAULT,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "10",
-                text = "Приехать на лекцию",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "11",
-                text = "Обнять маму",
-                importance = TodoImportance.DEFAULT,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "12",
-                text = "Сходить в зал",
-                importance = TodoImportance.LOW,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "13",
-                text = "Изучить корутины",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "14",
-                text = "Починить велик",
-                importance = TodoImportance.DEFAULT,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "15",
-                text = "Заказать продукты",
-                importance = TodoImportance.LOW,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "16",
-                text = "Зарядить телефон",
-                importance = TodoImportance.DEFAULT,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "17",
-                text = "Закрыть кольца",
-                importance = TodoImportance.LOW,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "18",
-                text = "Перестать бояться",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "19",
-                text = "Моя мечта стать разработчиком",
-                importance = TodoImportance.HIGH,
-                deadline = createDate(2024, 11, 28),
-                createdAt = Date()
-            ),
-            TodoItem(
-                id = "20",
-                text = "А у меня день рождения 17 ноября",
-                importance = TodoImportance.LOW,
-                deadline = createDate(2024, 11, 17),
-                createdAt = Date()
-            ),
+    // Дополнительные функции для преобразования моделей
+    private fun TodoItem.toNetworkModel(): TodoItemNetwork {
+        return TodoItemNetwork(
+            id = id,
+            text = text,
+            importance = importance.toNetworkImportance(),
+            deadline = deadline?.time?.div(1000),
+            isCompleted = isCompleted,
+            color = null,
+            createdAt = createdAt.time.div(1000),
+            changedAt = modifiedAt?.time?.div(1000) ?: createdAt.time.div(1000),
+            lastUpdatedBy = "your_device_id" // Замените на актуальное значение
         )
+    }
+
+    private fun TodoItemNetwork.toDomainModel(): TodoItem {
+        return TodoItem(
+            id = id,
+            text = text,
+            importance = importance.toDomainImportance(),
+            deadline = deadline?.let { Date(it * 1000) },
+            isCompleted = isCompleted,
+            createdAt = Date(createdAt * 1000),
+            modifiedAt = Date(changedAt * 1000)
+        )
+    }
+
+    private fun TodoImportance.toNetworkImportance(): ImportanceNetwork {
+        return when (this) {
+            TodoImportance.LOW -> ImportanceNetwork.LOW
+            TodoImportance.DEFAULT -> ImportanceNetwork.BASIC
+            TodoImportance.HIGH -> ImportanceNetwork.IMPORTANT
+        }
+    }
+
+    private fun ImportanceNetwork.toDomainImportance(): TodoImportance {
+        return when (this) {
+            ImportanceNetwork.LOW -> TodoImportance.LOW
+            ImportanceNetwork.BASIC -> TodoImportance.DEFAULT
+            ImportanceNetwork.IMPORTANT -> TodoImportance.HIGH
+        }
     }
 }
