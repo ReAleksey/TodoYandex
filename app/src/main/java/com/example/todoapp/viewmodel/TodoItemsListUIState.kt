@@ -4,7 +4,7 @@ import com.example.todoapp.model.TodoItem
 
 sealed class TodoListUiState {
     data object Loading : TodoListUiState()
-    data class Error(val exception: Throwable) : TodoListUiState()
+    data class Error(val message: String) : TodoListUiState()
 
     data class Loaded(
         val items: List<TodoItem>,

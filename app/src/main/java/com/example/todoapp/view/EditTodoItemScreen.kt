@@ -36,6 +36,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.todoapp.view.items.DeadlineItem
@@ -54,9 +56,11 @@ import com.example.todoapp.model.TodoImportance
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.model.TodoItemRepository
 import com.example.todoapp.ui.theme.ToDoAppTheme
+import com.example.todoapp.viewmodel.EditTodoItemEvent
 import com.example.todoapp.viewmodel.TodoListUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 
 
 @Serializable
@@ -78,6 +82,8 @@ fun EditTodoItemScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val appBarColor = MaterialTheme.colorScheme.background
     val scrolledAppBarColor = MaterialTheme.colorScheme.surface
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val topColor = remember {
         Animatable(appBarColor)
@@ -85,6 +91,16 @@ fun EditTodoItemScreen(
 
     val topElevation = remember {
         androidx.compose.animation.core.Animatable(0.dp.value)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                is EditTodoItemEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
     }
 
     LaunchedEffect(scrollBehavior.state.collapsedFraction) {
@@ -98,6 +114,7 @@ fun EditTodoItemScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
@@ -112,8 +129,10 @@ fun EditTodoItemScreen(
                         TextButton(
                             onClick = {
                                 focusManager.clearFocus()
-                                viewModel.save()
-                                onClose()
+                                coroutineScope.launch {
+                                    viewModel.save()
+                                    onClose()
+                                }
                             },
                             enabled = uiState is EditTodoItemUiState.Loaded,
                             colors = ButtonDefaults.textButtonColors(
@@ -220,8 +239,10 @@ fun EditTodoItemScreen(
                         DeleteItem(
                             enabled = state.itemState == EditTodoItemUiState.ItemState.EDIT,
                             onDeleted = {
-                                viewModel.delete()
-                                onClose()
+                                coroutineScope.launch {
+                                    viewModel.delete()
+                                    onClose()
+                                }
                             },
                             onClick = focusManager::clearFocus
                         )
@@ -230,22 +251,6 @@ fun EditTodoItemScreen(
                     item { Spacer(modifier = Modifier.height(32.dp)) }
                 }
             }
-//            is EditTodoItemUiState.Error -> {
-//                ErrorComponent(
-//                    exception = (uiState as EditItemUiState.Error).exception,
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(paddingValue)
-//                )
-//            }
-//
-//            EditItemUiState.Loading -> {
-//                LoadingComponent(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(paddingValue)
-//                )
-//            }
             else -> {}
         }
     }

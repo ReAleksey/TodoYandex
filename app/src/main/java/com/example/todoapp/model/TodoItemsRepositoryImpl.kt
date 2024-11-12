@@ -32,22 +32,52 @@ class TodoItemsRepositoryImpl(private val context: Context) : TodoItemRepository
     override suspend fun getItem(id: String): TodoItem? =
         _itemsFlow.value.firstOrNull { it.id == id }
 
+    private suspend fun <T> executeWithRetry(
+        maxRetries: Int = 3,
+        initialDelayMillis: Long = 1000,
+        maxDelayMillis: Long = 5000,
+        action: suspend () -> T
+    ): T {
+        var currentDelay = initialDelayMillis
+        repeat(maxRetries) { attempt ->
+            try {
+                Log.d("MyLog", "executeWithRetry(): Попытка ${attempt + 1}")
+                return action()
+            } catch (e: Exception) {
+                if (attempt == maxRetries - 1) {
+                    Log.e("MyLog", "executeWithRetry(): Достигнуто максимальное количество попыток")
+                    throw e
+                }
+                Log.e("MyLog", "executeWithRetry(): Ошибка, повтор через $currentDelay мс", e)
+                delay(currentDelay)
+                currentDelay = (currentDelay * 2).coerceAtMost(maxDelayMillis)
+            }
+        }
+        throw Exception("Failed after $maxRetries retries")
+    }
+
     override suspend fun addItem(item: TodoItem) {
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                val response = NetworkModule.apiService.addTodoItem(
-                    revision,
-                    TodoItemRequest(item.toNetworkModel())
-                )
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        revision = body.revision
-                        synchronize()
+                executeWithRetry {
+                    val response = NetworkModule.apiService.addTodoItem(
+                        revision,
+                        TodoItemRequest(item.toNetworkModel())
+                    )
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body != null) {
+                            revision = body.revision
+                            synchronize()
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(
+                            "MyLog",
+                            "TodoItemsRepositoryImpl: Failed to add item: ${response.code()} ${response.message()} $errorBody"
+                        )
+                        throw Exception("Failed to add item: ${response.code()} ${response.message()}")
                     }
-                } else {
-                    // Handle errors
-                    throw Exception("Failed to add item: ${response.code()} ${response.message()}")
                 }
             }
         }
@@ -56,20 +86,26 @@ class TodoItemsRepositoryImpl(private val context: Context) : TodoItemRepository
     override suspend fun saveItem(item: TodoItem) {
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                val response = NetworkModule.apiService.updateTodoItem(
-                    revision,
-                    item.id,
-                    TodoItemRequest(item.toNetworkModel())
-                )
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        revision = body.revision
-                        synchronize()
+                executeWithRetry {
+                    val response = NetworkModule.apiService.updateTodoItem(
+                        revision,
+                        item.id,
+                        TodoItemRequest(item.toNetworkModel())
+                    )
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body != null) {
+                            revision = body.revision
+                            synchronize()
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(
+                            "MyLog",
+                            "TodoItemsRepositoryImpl: Failed to save item: ${response.code()} ${response.message()} $errorBody"
+                        )
+                        throw Exception("Failed to save item: ${response.code()} ${response.message()}")
                     }
-                } else {
-                    // Handle errors
-                    throw Exception("Failed to save item: ${response.code()} ${response.message()}")
                 }
             }
         }
@@ -78,19 +114,25 @@ class TodoItemsRepositoryImpl(private val context: Context) : TodoItemRepository
     override suspend fun deleteItem(item: TodoItem) {
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                val response = NetworkModule.apiService.deleteTodoItem(
-                    revision,
-                    item.id
-                )
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        revision = body.revision
-                        synchronize()
+                executeWithRetry {
+                    val response = NetworkModule.apiService.deleteTodoItem(
+                        revision,
+                        item.id
+                    )
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body != null) {
+                            revision = body.revision
+                            synchronize()
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(
+                            "MyLog",
+                            "TodoItemsRepositoryImpl: Error in deleteItem: ${response.code()} ${response.message()} $errorBody"
+                        )
+                        throw Exception("Failed to delete item: ${response.code()} ${response.message()}")
                     }
-                } else {
-                    // Handle errors
-                    throw Exception("Failed to delete item: ${response.code()} ${response.message()}")
                 }
             }
         }
@@ -99,28 +141,30 @@ class TodoItemsRepositoryImpl(private val context: Context) : TodoItemRepository
     override suspend fun synchronize() {
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                val response = NetworkModule.apiService.getTodoList()
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        revision = body.revision
-                        val items = body.list.map { it.toDomainModel() }
-                        _itemsFlow.value = items
+                executeWithRetry {
+                    Log.d("MyLog", "synchronize(): Начало запроса на сервер")
+                    val response = NetworkModule.apiService.getTodoList()
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body != null) {
+                            revision = body.revision
+                            val items = body.list.map { it.toDomainModel() }
+                            _itemsFlow.value = items
+                            Log.d("MyLog", "synchronize(): Данные успешно обновлены")
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(
+                            "MyLog",
+                            "TodoItemsRepositoryImpl: Failed to synchronize: ${response.code()} ${response.message()} $errorBody"
+                        )
+                        throw Exception("Failed to synchronize: ${response.code()} ${response.message()}")
                     }
-                } else {
-                    // Handle errors
-                    val errorBody = response.errorBody()?.string()
-                    Log.e(
-                        "MyLog",
-                        "TodoItemsRepositoryImpl: Failed to synchronize: ${response.code()} ${response.message()} $errorBody"
-                    )
-                    throw Exception("Failed to synchronize: ${response.code()} ${response.message()}")
                 }
             }
         }
     }
 
-    // Дополнительные функции для преобразования моделей
     private fun TodoItem.toNetworkModel(): TodoItemNetwork {
         return TodoItemNetwork(
             id = id,
@@ -165,4 +209,6 @@ class TodoItemsRepositoryImpl(private val context: Context) : TodoItemRepository
     private fun getDeviceId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
+
 }
+

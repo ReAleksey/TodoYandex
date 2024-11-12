@@ -90,4 +90,9 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.accompanist.swiperefresh)
+    implementation(libs.material3)
+
+
 }
