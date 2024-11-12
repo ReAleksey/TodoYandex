@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.todoapp.TodoApp
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.model.TodoItemRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,62 +17,80 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
+import kotlinx.coroutines.flow.combine
+
 
 class TodoListViewModel(
     private val todoItemRepository: TodoItemRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<TodoListUiState>(TodoListUiState.Loading)
-    val uiState: StateFlow<TodoListUiState> = _uiState
-
     // Define filterFlow
     private val filterFlow = MutableStateFlow(TodoListUiState.FilterState.NOT_COMPLETED)
 
-    init {
-        viewModelScope.launch {
-            try {
-                // Synchronize data with the server
-                todoItemRepository.synchronize()
+    val uiState: StateFlow<TodoListUiState> = combine(
+        todoItemRepository.getItemsFlow(),
+        filterFlow
+    ) { items, filter ->
+        TodoListUiState.Loaded(
+            items = items.filter(filter.filter),
+            filterState = filter,
+            doneCount = items.count { it.isCompleted }
+        ) as TodoListUiState
+    }
+        .catch { e ->
+            emit(TodoListUiState.Error(e))
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = TodoListUiState.Loading
+        )
 
-                // Combine itemsFlow and filterFlow
-                todoItemRepository.getItemsFlow()
-                    .combine(filterFlow) { items, filter ->
-                        TodoListUiState.Loaded(
-                            items = items.filter(filter.filter),
-                            filterState = filter,
-                            doneCount = items.count { it.isCompleted }
-                        )
-                    }
-                    .catch { e ->
-                        _uiState.value = TodoListUiState.Error(e)
-                    }
-                    .collect { uiStateValue ->
-                        _uiState.value = uiStateValue
-                    }
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                todoItemRepository.synchronize()
             } catch (e: Exception) {
-                _uiState.value = TodoListUiState.Error(e)
+                Log.d("MyLog", "TodoListViewModel: Error in init: ", e)
             }
         }
     }
 
     fun onChecked(item: TodoItem, checked: Boolean) {
-        viewModelScope.launch {
-            if (uiState.value is TodoListUiState.Loaded) {
-                val newItem = item.copy(isCompleted = checked)
-                todoItemRepository.saveItem(newItem)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val updatedItem = item.copy(
+                    isCompleted = checked,
+                    modifiedAt = Date()
+                )
+                todoItemRepository.saveItem(updatedItem)
+            } catch (e: Exception) {
+                Log.e("MyLog", "TodoListViewModel: Error in onChecked: ", e)
             }
         }
     }
 
     fun delete(item: TodoItem) {
-        viewModelScope.launch {
-            todoItemRepository.deleteItem(item)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                todoItemRepository.deleteItem(item)
+            } catch (e: Exception) {
+                Log.e("MyLog", "TodoListViewModel: Error in delete: ", e)
+            }
         }
     }
 
     fun onFilterChange(filterState: TodoListUiState.FilterState) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             filterFlow.emit(filterState)
+        }
+    }
+
+    fun getLastKnownItems(): List<TodoItem> {
+        return when (val currentState = uiState.value) {
+            is TodoListUiState.Loaded -> currentState.items
+            else -> emptyList()
         }
     }
 

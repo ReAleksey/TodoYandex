@@ -16,12 +16,13 @@ import com.example.todoapp.view.TodoList
 import com.example.todoapp.view.TodoListScreen
 import com.example.todoapp.viewmodel.EditTodoItemViewModel
 import com.example.todoapp.viewmodel.TodoListViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     listViewModel: TodoListViewModel,
-    editItemViewModel: EditTodoItemViewModel,
     darkTheme: Boolean,
     onThemeChange: () -> Unit
 ) {
@@ -72,6 +73,7 @@ fun NavGraph(
                 )
             },
         ) { backStackEntry ->
+            val editItemViewModel: EditTodoItemViewModel = viewModel(factory = EditTodoItemViewModel.Factory)
             val editItem: EditTodoItem = backStackEntry.toRoute()
             EditTodoItemScreen(
                 itemId = editItem.itemId,

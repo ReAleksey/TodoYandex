@@ -9,11 +9,14 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.todoapp.TodoApp
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.model.TodoItemRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Date
 import java.util.UUID
 
 class EditTodoItemViewModel(
@@ -30,7 +33,9 @@ class EditTodoItemViewModel(
         job = viewModelScope.launch {
             viewModelScope.launch {
                 try {
-                    val item = itemId?.let { todoItemRepository.getItem(itemId) }
+                    val item = withContext(Dispatchers.IO) {
+                        itemId?.let { todoItemRepository.getItem(itemId) }
+                    }
                     _uiState.emit(
                         if (item == null)
                             EditTodoItemUiState.Loaded(
@@ -54,12 +59,23 @@ class EditTodoItemViewModel(
     }
 
     fun save() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if (uiState.value is EditTodoItemUiState.Loaded) {
-                val state = (uiState.value as EditTodoItemUiState.Loaded)
+                val state = uiState.value as EditTodoItemUiState.Loaded
                 when (state.itemState) {
-                    EditTodoItemUiState.ItemState.EDIT -> todoItemRepository.saveItem(item = state.item)
-                    EditTodoItemUiState.ItemState.NEW -> todoItemRepository.addItem(item = state.item)
+                    EditTodoItemUiState.ItemState.EDIT -> {
+                        val updatedItem = state.item.copy(
+                            modifiedAt = Date()
+                        )
+                        todoItemRepository.saveItem(updatedItem)
+                    }
+                    EditTodoItemUiState.ItemState.NEW -> {
+                        val newItem = state.item.copy(
+                            createdAt = Date(),
+                            modifiedAt = Date()
+                        )
+                        todoItemRepository.addItem(newItem)
+                    }
                 }
             }
         }
@@ -77,16 +93,19 @@ class EditTodoItemViewModel(
     }
 
     fun delete() {
-        require(uiState.value is EditTodoItemUiState.Loaded)
-        viewModelScope.launch {
-            todoItemRepository.deleteItem((uiState.value as EditTodoItemUiState.Loaded).item)
+        viewModelScope.launch(Dispatchers.IO) {
+            if (uiState.value is EditTodoItemUiState.Loaded) {
+                val item = (uiState.value as EditTodoItemUiState.Loaded).item
+                todoItemRepository.deleteItem(item)
+            }
         }
     }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val todoItemRepository =
-                    (this[APPLICATION_KEY] as TodoApp).todoItemRepository
+                val application = (checkNotNull(this[APPLICATION_KEY]) as TodoApp)
+                val todoItemRepository = application.todoItemRepository
                 EditTodoItemViewModel(
                     todoItemRepository = todoItemRepository
                 )

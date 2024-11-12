@@ -2,8 +2,10 @@ package com.example.todoapp.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +57,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.platform.LocalContext
+
 
 @Serializable
 data object TodoList
@@ -71,12 +80,12 @@ fun TodoListScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Обработка ошибок
     LaunchedEffect(uiState) {
         if (uiState is TodoListUiState.Error) {
-            snackbarHostState.showSnackbar("Something went wrong")
+            snackbarHostState.showSnackbar("Что-то пошло не так")
         }
     }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
@@ -85,129 +94,97 @@ fun TodoListScreen(
             TodoListToolbar(
                 scrollBehavior = scrollBehavior,
                 topPadding = 0.dp,
-                doneCount = (uiState as? TodoListUiState.Loaded)?.doneCount,
-                filterState = (uiState as? TodoListUiState.Loaded)?.filterState,
-                onFilterChange = viewModel::onFilterChange,
                 darkTheme = darkTheme,
-                onThemeChange = onThemeChange
+                onThemeChange = onThemeChange,
+                doneCount = when (val state = uiState) {
+                    is TodoListUiState.Loaded -> state.doneCount
+                    else -> 0
+                },
+                filterState = when (val state = uiState) {
+                    is TodoListUiState.Loaded -> state.filterState
+                    else -> TodoListUiState.FilterState.ALL
+                },
+                onFilterChange = { viewModel.onFilterChange(it) }
             )
         },
         floatingActionButton = {
-            if (uiState is TodoListUiState.Loaded)
-                FloatingActionButton(
-                    onClick = { toEditItemScreen(null) },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(id = R.string.add))
-                }
+            FloatingActionButton(
+                onClick = { toEditItemScreen(null) },
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = stringResource(id = R.string.add))
+            }
         }
-    ) { paddingValue ->
+    ) { paddingValues ->
         when (uiState) {
+            is TodoListUiState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
             is TodoListUiState.Loaded -> {
                 val state = uiState as TodoListUiState.Loaded
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .padding(
                             start = 8.dp,
                             end = 8.dp,
-                            top = paddingValue.calculateTopPadding()
+                            top = paddingValues.calculateTopPadding()
                         ),
                     state = lazyListState,
                     userScrollEnabled = true
                 ) {
-                        item {
-                            Spacer(modifier = Modifier.height(5.dp))
-                        }
-                        if (state.items.isNotEmpty()) {
-                            item {
-                                val shape = RoundedCornerShape(
-                                    topEnd = 8.dp,
-                                    topStart = 8.dp
-                                )
-                                BoxWithShadows (
-                                    Sides.TOP,
-                                ) {
-                                    Spacer(
-                                        modifier = Modifier
-                                            .shadow(2.dp, shape)
-                                            .clip(shape)
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .fillMaxWidth()
-                                            .height(7.dp)
-                                    )
-                                }
+                    items(state.items) { item ->
+                        TodoItemRow(
+                            item = item,
+                            onChecked = { isChecked ->
+                                viewModel.onChecked(item, isChecked)
+                            },
+                            onDeleted = {
+                                viewModel.delete(item)
+                            },
+                            onInfoClicked = {
+                                toEditItemScreen(item.id)
                             }
-                            items(state.items.size, key = { i -> state.items[i].hashCode() }) {
-                                val item = state.items[it]
-                                TodoItemRow(
-                                    item = item,
-                                    onChecked = { value -> viewModel.onChecked(item, value) },
-                                    onDeleted = { viewModel.delete(item) },
-                                    onInfoClicked = { toEditItemScreen(item.id) },
-//                                    dismissOnCheck = state.filterState == TodoListUiState.FilterState.NOT_COMPLETED
-                                )
-                            }
-                            item {
-                                val shape = RoundedCornerShape(
-                                    bottomEnd = 8.dp,
-                                    bottomStart = 8.dp
-                                )
-                                BoxWithShadows (
-                                    Sides.BOTTOM,
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .shadow(2.dp, shape)
-                                            .clip(shape)
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .clickable { toEditItemScreen(null) }
-                                    ) {
-                                        Spacer(modifier = Modifier.width(45.dp))
-                                        Text(
-                                            text = stringResource(id = R.string.new_item),
-                                            modifier = Modifier.padding(20.dp),
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            style = MaterialTheme.typography.bodyLarge
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            item {
-                                val shape = RoundedCornerShape(
-                                    bottomEnd = 8.dp,
-                                    bottomStart = 8.dp,
-                                    topEnd = 8.dp,
-                                    topStart = 8.dp
-                                )
-                                Row(
-                                    modifier = Modifier
-                                        .shadow(2.dp, shape)
-                                        .clip(shape)
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .fillMaxWidth()
-                                        .clickable { toEditItemScreen(null) }
-                                ) {
-                                    Spacer(modifier = Modifier.width(45.dp))
-                                    Text(
-                                        text = stringResource(id = R.string.new_item),
-                                        modifier = Modifier.padding(20.dp),
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
-                        }
-
-                        item {
-                            Spacer(modifier = Modifier.height(32.dp)) }
+                        )
+                    }
                 }
             }
-            else -> {}
+            is TodoListUiState.Error -> {
+                val items = viewModel.getLastKnownItems()
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            start = 8.dp,
+                            end = 8.dp,
+                            top = paddingValues.calculateTopPadding()
+                        ),
+                    state = lazyListState,
+                    userScrollEnabled = true
+                ) {
+                    items(items) { item ->
+                        TodoItemRow(
+                            item = item,
+                            onChecked = { isChecked ->
+                                viewModel.onChecked(item, isChecked)
+                            },
+                            onDeleted = {
+                                viewModel.delete(item)
+                            },
+                            onInfoClicked = {
+                                toEditItemScreen(item.id)
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -241,7 +218,8 @@ private fun TodoListScreenDarkPreview() {
 
 @Composable
 private fun previewViewModel(): TodoListViewModel {
+    val context = LocalContext.current
     return TodoListViewModel(
-        todoItemRepository = TodoItemsRepositoryImpl()
+        todoItemRepository = TodoItemsRepositoryImpl(context)
     )
 }

@@ -35,12 +35,10 @@ class MainActivity : ComponentActivity() {
     fun TodoComposeApp(darkTheme: Boolean, onThemeChange: () -> Unit) {
         val navController = rememberNavController()
         val listViewModel: TodoListViewModel by viewModels { TodoListViewModel.Factory }
-        val editItemViewModel: EditTodoItemViewModel by viewModels { EditTodoItemViewModel.Factory }
 
         NavGraph(
             navController = navController,
             listViewModel = listViewModel,
-            editItemViewModel = editItemViewModel,
             darkTheme = darkTheme,
             onThemeChange = onThemeChange
         )
