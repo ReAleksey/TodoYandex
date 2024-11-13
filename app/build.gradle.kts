@@ -85,15 +85,12 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.material.v1120)
 
-    // Retrofit и OkHttp
     implementation(libs.retrofit)
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.logging.interceptor)
 
-    // Kotlinx Serialization JSON
     implementation(libs.kotlinx.serialization.json.v173)
 
-    // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.androidx.work.runtime.ktx)
@@ -107,5 +104,6 @@ dependencies {
 
     implementation(libs.annotations)
 
+    implementation(libs.androidx.datastore.preferences)
 
 }
