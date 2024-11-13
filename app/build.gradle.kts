@@ -1,3 +1,7 @@
+configurations.all {
+    exclude(group = "com.intellij", module = "annotations")
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,7 +9,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
 
-
+    id("com.google.devtools.ksp")
+//    id("org.jetbrains.kotlin.kapt") version "2.0.21"
 }
 
 android {
@@ -52,6 +57,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
 }
 
 dependencies {
@@ -73,11 +79,31 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation(libs.accompanist.systemuicontroller)
     implementation(libs.kotlinx.serialization.json)
-    implementation("com.google.android.material:material:1.10.0")
-    implementation("androidx.fragment:fragment-ktx:1.6.2")
-    implementation("com.google.android.material:material:1.10.0")
+    implementation(libs.material)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.material.v1120)
 
+    implementation(libs.retrofit)
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
+    implementation(libs.logging.interceptor)
+
+    implementation(libs.kotlinx.serialization.json.v173)
+
+    implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.accompanist.swiperefresh)
+    implementation(libs.material3)
+
+    implementation(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    implementation(libs.annotations)
+
+    implementation(libs.androidx.datastore.preferences)
 
 }
