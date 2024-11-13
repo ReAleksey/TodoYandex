@@ -1,76 +1,61 @@
 package com.example.todoapp.view
 
 import android.app.Application
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.example.todoapp.view.items.BoxWithShadows
-import com.example.todoapp.R
-import com.example.todoapp.view.items.Sides
-import com.example.todoapp.view.items.TodoItemRow
-import com.example.todoapp.view.items.TodoListToolbar
-import com.example.todoapp.viewmodel.TodoListUiState
-import com.example.todoapp.viewmodel.TodoListViewModel
-import kotlinx.serialization.Serializable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.example.todoapp.R
 import com.example.todoapp.model.TodoImportance
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.model.TodoItemRepository
 import com.example.todoapp.model.TodoItemsRepositoryImpl
 import com.example.todoapp.ui.theme.ToDoAppTheme
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flow
-import java.util.Date
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
+import com.example.todoapp.view.items.TodoItemRow
+import com.example.todoapp.view.items.TodoListToolbar
 import com.example.todoapp.viewmodel.TodoListEvent
-import kotlinx.coroutines.flow.collectLatest
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.example.todoapp.viewmodel.TodoListUiState
+import com.example.todoapp.viewmodel.TodoListViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.serialization.Serializable
+import java.util.Date
 
 
 @Serializable
@@ -247,8 +232,39 @@ private fun TodoListScreenDarkPreview() {
 @Composable
 private fun previewViewModel(): TodoListViewModel {
     val context = LocalContext.current
+    val mockRepository = object : TodoItemRepository {
+        private val items = listOf(
+            TodoItem(
+                id = "1",
+                text = "Todo 1",
+                importance = TodoImportance.DEFAULT,
+                isCompleted = false,
+                createdAt = Date(),
+                modifiedAt = Date()
+            ),
+            TodoItem(
+                id = "2",
+                text = "Todo 2",
+                importance = TodoImportance.HIGH,
+                isCompleted = true,
+                createdAt = Date(),
+                modifiedAt = Date()
+            )
+        )
+        override fun getItemsFlow(): Flow<List<TodoItem>> = flowOf(items)
+
+        override suspend fun getItem(id: String): TodoItem? = items.find { it.id == id }
+
+        override suspend fun addItem(item: TodoItem) {}
+
+        override suspend fun saveItem(item: TodoItem) {}
+
+        override suspend fun deleteItem(item: TodoItem) {}
+
+        override suspend fun synchronize() {}
+    }
     return TodoListViewModel(
         application = context.applicationContext as Application,
-        todoItemRepository = TodoItemsRepositoryImpl(context)
+        todoItemRepository = mockRepository
     )
 }

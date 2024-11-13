@@ -1,9 +1,9 @@
 package com.example.todoapp.model
 
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 
 interface TodoItemRepository {
-    fun getItemsFlow(): StateFlow<List<TodoItem>>
+    fun getItemsFlow(): Flow<List<TodoItem>>
 
     suspend fun getItem(id: String): TodoItem?
 

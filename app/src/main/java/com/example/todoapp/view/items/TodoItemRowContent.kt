@@ -1,18 +1,15 @@
 package com.example.todoapp.view.items
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -176,29 +172,6 @@ private fun ItemCheckBox(
             )
     )
 }
-//        if (highImportance)
-//            CheckboxColors(
-//                checkedCheckmarkColor = MaterialTheme.colorScheme.surface,
-//                checkedBoxColor = MaterialTheme.colorScheme.primary,
-//                uncheckedBoxColor = MaterialTheme.colorScheme.error.copy(alpha = 0.16f),
-//                checkedBorderColor = MaterialTheme.colorScheme.primary,
-//                uncheckedBorderColor = MaterialTheme.colorScheme.error,
-//                uncheckedCheckmarkColor = Color.Unspecified,
-//                disabledCheckedBoxColor = Color.Unspecified,
-//                disabledUncheckedBoxColor = Color.Unspecified,
-//                disabledIndeterminateBoxColor = Color.Unspecified,
-//                disabledBorderColor = Color.Unspecified,
-//                disabledUncheckedBorderColor = Color.Unspecified,
-//                disabledIndeterminateBorderColor = Color.Unspecified,
-//            )
-//        else
-//            CheckboxDefaults.colors(
-//                checkedColor = MaterialTheme.colorScheme.primary,
-//                uncheckedColor = MaterialTheme.colorScheme.outline,
-//                checkmarkColor = MaterialTheme.colorScheme.surface
-//            )
-//    )
-//}
 
 @Preview(showBackground = true)
 @Composable

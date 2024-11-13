@@ -1,3 +1,7 @@
+configurations.all {
+    exclude(group = "com.intellij", module = "annotations")
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,7 +9,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
 
-
+    id("com.google.devtools.ksp")
+//    id("org.jetbrains.kotlin.kapt") version "2.0.21"
 }
 
 android {
@@ -52,6 +57,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
 }
 
 dependencies {
@@ -93,6 +99,13 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.material3)
+
+    implementation(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    implementation(libs.annotations)
 
 
 }

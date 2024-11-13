@@ -7,7 +7,6 @@ import android.net.Network
 import android.net.NetworkRequest
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -28,7 +27,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
-import kotlinx.coroutines.flow.combine
 
 
 class TodoListViewModel(
@@ -44,6 +42,9 @@ class TodoListViewModel(
     val eventFlow = _eventFlow.asSharedFlow()
     private val connectivityManager =
         application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    val itemsFlow: StateFlow<List<TodoItem>> = todoItemRepository.getItemsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
@@ -142,6 +143,7 @@ class TodoListViewModel(
         super.onCleared()
         connectivityManager.unregisterNetworkCallback(networkCallback)
     }
+
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
