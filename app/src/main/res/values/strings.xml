@@ -24,6 +24,9 @@
     <string name="light_theme">Light theme</string>
     <string name="dark_theme">Dark theme</string>
     <string name="no">No</string>
+    <string name="error_connection">Error connection</string>
+    <string name="use_offline">Use Offline</string>
+    <string name="retry">Retry</string>
 
 
 
