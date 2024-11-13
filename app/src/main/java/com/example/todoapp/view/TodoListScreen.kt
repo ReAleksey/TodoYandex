@@ -153,7 +153,7 @@ fun TodoListScreen(
                         state = lazyListState,
                         userScrollEnabled = true
                     ) {
-                        items(state.items) { item ->
+                        items(state.items, key = { it.id }) { item ->
                             TodoItemRow(
                                 item = item,
                                 onChecked = { isChecked ->

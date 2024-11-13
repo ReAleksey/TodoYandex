@@ -45,14 +45,14 @@ class TodoItemsRepositoryImpl(
         var currentDelay = initialDelayMillis
         repeat(maxRetries) { attempt ->
             try {
-                Log.d("MyLog", "executeWithRetry(): Попытка ${attempt + 1}")
+                Log.d("MyLog", "TodoItemsRepositoryImpl: executeWithRetry(): Попытка ${attempt + 1}")
                 return action()
             } catch (e: Exception) {
                 if (attempt == maxRetries - 1) {
-                    Log.e("MyLog", "executeWithRetry(): Достигнуто максимальное количество попыток")
+                    Log.e("MyLog", "TodoItemsRepositoryImpl: executeWithRetry(): Достигнуто максимальное количество попыток")
                     throw e
                 }
-                Log.e("MyLog", "executeWithRetry(): Ошибка, повтор через $currentDelay мс", e)
+                Log.e("MyLog", "TodoItemsRepositoryImpl: executeWithRetry(): Ошибка, повтор через $currentDelay мс", e)
                 delay(currentDelay)
                 currentDelay = (currentDelay * 2).coerceAtMost(maxDelayMillis)
             }
@@ -71,9 +71,36 @@ class TodoItemsRepositoryImpl(
     }
 
     override suspend fun deleteItem(item: TodoItem) {
-        todoItemDao.deleteItem(item)
-        synchronize()
+        withContext(Dispatchers.IO) {
+            todoItemDao.deleteItem(item)
+            executeWithRetry {
+                Log.d("MyLog", "TodoItemsRepositoryImpl: deleteItem(): Отправка DELETE запроса на сервер для задачи ${item.id}")
+                val response = NetworkModule.apiService.deleteTodoItem(revision, item.id)
+                when {
+                    response.isSuccessful -> {
+                        val body = response.body()
+                        if (body != null) {
+                            revision = body.revision
+                        } else {
+                            Log.e("MyLog", "deleteItem(): Сервер вернул пустой ответ")
+                        }
+                    }
+                    response.code() == 400 -> {
+                        synchronize()
+                        deleteItem(item)
+                    }
+                    response.code() == 404 -> {
+                        Log.e("MyLog", "deleteItem(): Элемент не найден на сервере, считаем удалённым")
+                    }
+                    else -> {
+                        throw Exception("Failed to delete item on server: ${response.code()}")
+                    }
+                }
+            }
+        }
     }
+
+
 
     override suspend fun synchronize() {
         withContext(Dispatchers.IO) {
@@ -89,16 +116,17 @@ class TodoItemsRepositoryImpl(
 
                             val localItems = todoItemDao.getAllItems().first()
                             val mergedItems = mergeData(localItems, serverItems)
+
                             todoItemDao.deleteAllItems()
                             todoItemDao.insertItems(mergedItems)
 
+                            // Отправляем обновлённый список на сервер
                             val request = TodoListRequest(mergedItems.map { it.toNetworkModel() })
                             val updateResponse = NetworkModule.apiService.updateTodoList(revision, request)
                             if (updateResponse.isSuccessful) {
                                 val updateBody = updateResponse.body()
                                 if (updateBody != null) {
                                     revision = updateBody.revision
-                                    _itemsFlow.value = mergedItems
                                 }
                             } else {
                                 throw Exception("Failed to update server data")
@@ -111,6 +139,7 @@ class TodoItemsRepositoryImpl(
             }
         }
     }
+
 
 
     private fun TodoItem.toNetworkModel(): TodoItemNetwork {
@@ -162,13 +191,33 @@ class TodoItemsRepositoryImpl(
         val localItemsMap = localItems.associateBy { it.id }
         val serverItemsMap = serverItems.associateBy { it.id }
 
-        val mergedMap = serverItemsMap.toMutableMap()
-        for ((id, localItem) in localItemsMap) {
-            mergedMap[id] = localItem
+        val mergedMap = mutableMapOf<String, TodoItem>()
+
+        val allIds = localItemsMap.keys + serverItemsMap.keys
+        for (id in allIds) {
+            val localItem = localItemsMap[id]
+            val serverItem = serverItemsMap[id]
+
+            if (localItem != null && serverItem != null) {
+                val localModifiedAt = localItem.modifiedAt ?: localItem.createdAt
+                val serverModifiedAt = serverItem.modifiedAt ?: serverItem.createdAt
+
+                if (localModifiedAt.after(serverModifiedAt)) {
+                    mergedMap[id] = localItem
+                } else {
+                    mergedMap[id] = serverItem
+                }
+            } else if (localItem != null) {
+                mergedMap[id] = localItem
+            } else if (serverItem != null) {
+                mergedMap[id] = serverItem
+            }
         }
 
         return mergedMap.values.toList()
     }
+
+
 
     private fun getDeviceId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)

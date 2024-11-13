@@ -26,15 +26,6 @@ object NetworkModule {
         .addInterceptor { chain ->
             val request = chain.request()
             val response = chain.proceed(request)
-            if (!response.isSuccessful) {
-                when (response.code) {
-                    400 -> throw Exception("Неправильно сформирован запрос")
-                    401 -> throw Exception("Ошибка авторизации")
-                    404 -> throw Exception("Элемент не найден")
-                    500 -> throw Exception("Ошибка сервера")
-                    else -> throw Exception("Ошибка сети: ${response.code}")
-                }
-            }
             response
         }
         .build()
