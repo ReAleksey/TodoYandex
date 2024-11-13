@@ -12,6 +12,8 @@ sealed class TodoListUiState {
         val doneCount: Int
     ) : TodoListUiState()
 
+    object Offline : TodoListUiState()
+
     enum class FilterState(val filter: (TodoItem) -> Boolean) {
         ALL({ true }),
         NOT_COMPLETED({ !it.isCompleted })

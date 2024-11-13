@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -144,6 +145,15 @@ class TodoListViewModel(
         connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
+    fun useOfflineMode() {
+        viewModelScope.launch {
+            _uiState.value = TodoListUiState.Loaded(
+                items = todoItemRepository.getItemsFlow().first(),
+                filterState = filterFlow.value,
+                doneCount = todoItemRepository.getItemsFlow().first().count { it.isCompleted }
+            )
+        }
+    }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

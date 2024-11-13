@@ -24,6 +24,9 @@
     <string name="light_theme">Светлая тема</string>
     <string name="dark_theme">Тёмная тема</string>
     <string name="no">Нет</string>
+    <string name="error_connection">Ошибка подключения</string>
+    <string name="use_offline">Использовать офлайн</string>
+    <string name="retry">Повторить попытку</string>
 
 
 
