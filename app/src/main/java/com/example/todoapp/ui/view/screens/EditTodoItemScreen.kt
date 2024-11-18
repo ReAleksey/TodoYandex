@@ -63,7 +63,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.util.Date
 
-
 @Serializable
 data class EditTodoItem(
     val itemId: String?

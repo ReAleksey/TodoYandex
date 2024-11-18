@@ -61,10 +61,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.Serializable
 import java.util.Date
 
-
 @Serializable
 data object TodoList
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,7 +180,7 @@ fun TodoListScreen(
                     ErrorScreen(
                         message = message,
                         onRetry = { viewModel.retryFetchingData() },
-                        onUseOffline = { viewModel.useOfflineMode() } ,
+                        onUseOffline = { viewModel.useOfflineMode() },
                         modifier = Modifier.padding(paddingValues)
                     )
                 }
