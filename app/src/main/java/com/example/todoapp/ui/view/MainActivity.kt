@@ -5,11 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.Composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.todoapp.data.repository.UserPreferences
 import com.example.todoapp.ui.theme.ToDoAppTheme
 import com.example.todoapp.ui.view.viewmodel.TodoListViewModel
-import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
 
@@ -19,34 +19,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val initialPreferences = runBlocking {
-            listViewModel.getInitialPreferences()
-        }
-
         setContent {
-            ToDoAppTheme(darkTheme = initialPreferences.darkTheme) {
+            val userPreferences by listViewModel.userPreferencesFlow.collectAsStateWithLifecycle(
+                initialValue = UserPreferences(darkTheme = false, showCompleted = true)
+            )
+
+            ToDoAppTheme(darkTheme = userPreferences.darkTheme) {
                 TodoComposeApp(
                     listViewModel = listViewModel,
-                    darkTheme = initialPreferences.darkTheme,
-                    onThemeChange = { listViewModel.updateDarkTheme(!initialPreferences.darkTheme) }
+                    onThemeChange = { listViewModel.updateDarkTheme(!userPreferences.darkTheme) }
                 )
             }
         }
-    }
-
-    @Composable
-    fun TodoComposeApp(
-        listViewModel: TodoListViewModel,
-        darkTheme: Boolean,
-        onThemeChange: () -> Unit
-    ) {
-        val navController = rememberNavController()
-
-        NavGraph(
-            navController = navController,
-            listViewModel = listViewModel,
-            darkTheme = darkTheme,
-            onThemeChange = onThemeChange
-        )
     }
 }

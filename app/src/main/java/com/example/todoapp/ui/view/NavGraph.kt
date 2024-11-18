@@ -23,7 +23,6 @@ import com.example.todoapp.ui.view.screens.TodoListScreen
 fun NavGraph(
     navController: NavHostController,
     listViewModel: TodoListViewModel,
-    darkTheme: Boolean,
     onThemeChange: () -> Unit
 ) {
     NavHost(
@@ -49,7 +48,6 @@ fun NavGraph(
                 toEditItemScreen = { id ->
                     navController.navigate(EditTodoItem(id)) { launchSingleTop = true }
                 },
-                darkTheme = darkTheme,
                 onThemeChange = onThemeChange
             )
         }

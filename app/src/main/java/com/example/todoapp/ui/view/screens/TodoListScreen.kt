@@ -1,6 +1,5 @@
 package com.example.todoapp.ui.view.screens
 
-import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,30 +35,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.todoapp.R
-import com.example.todoapp.model.TodoImportance
-import com.example.todoapp.model.TodoItem
-import com.example.todoapp.data.repository.TodoItemRepository
-import com.example.todoapp.data.repository.UserPreferences
-import com.example.todoapp.data.repository.UserPreferencesRepositoryInterface
-import com.example.todoapp.ui.theme.ToDoAppTheme
 import com.example.todoapp.ui.view.items.TodoItemRow
 import com.example.todoapp.ui.view.items.TodoListToolbar
+import com.example.todoapp.ui.view.viewmodel.TodoListViewModel
 import com.example.todoapp.utils.TodoListEvent
 import com.example.todoapp.utils.TodoListUiState
-import com.example.todoapp.ui.view.viewmodel.TodoListViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.Serializable
-import java.util.Date
 
 @Serializable
 data object TodoList
@@ -69,7 +58,6 @@ data object TodoList
 fun TodoListScreen(
     viewModel: TodoListViewModel,
     toEditItemScreen: (itemId: String?) -> Unit,
-    darkTheme: Boolean,
     onThemeChange: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -78,6 +66,7 @@ fun TodoListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var refreshing by remember { mutableStateOf(false) }
     val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = refreshing)
+    val userPreferences by viewModel.userPreferencesFlow.collectAsStateWithLifecycle()
 
     val filterState = if (uiState is TodoListUiState.Loaded) {
         (uiState as TodoListUiState.Loaded).filterState
@@ -110,8 +99,6 @@ fun TodoListScreen(
             topBar = {
                 TodoListToolbar(
                     scrollBehavior = scrollBehavior,
-                    darkTheme = darkTheme,
-                    onThemeChange = onThemeChange,
                     doneCount = when (val state = uiState) {
                         is TodoListUiState.Loaded -> state.doneCount
                         else -> 0
@@ -119,7 +106,9 @@ fun TodoListScreen(
                     filterState = filterState,
                     onFilterChange = {
                         viewModel.updateShowCompleted(it == TodoListUiState.FilterState.ALL)
-                    }
+                    },
+                    darkTheme = userPreferences.darkTheme,
+                    onThemeChange = onThemeChange
                 )
             },
             floatingActionButton = {
@@ -187,33 +176,33 @@ fun TodoListScreen(
 
                 TodoListUiState.Offline -> {
                     val state = uiState as TodoListUiState.Loaded
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            start = 8.dp,
-                            end = 8.dp,
-                            top = paddingValues.calculateTopPadding()
-                        ),
-                    state = lazyListState,
-                    userScrollEnabled = true
-                ) {
-                    items(state.items, key = { it.id }) { item ->
-                        TodoItemRow(
-                            item = item,
-                            onChecked = { isChecked ->
-                                viewModel.onChecked(item, isChecked)
-                            },
-                            onDeleted = {
-                                viewModel.delete(item)
-                            },
-                            onInfoClicked = {
-                                toEditItemScreen(item.id)
-                            }
-                        )
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                start = 8.dp,
+                                end = 8.dp,
+                                top = paddingValues.calculateTopPadding()
+                            ),
+                        state = lazyListState,
+                        userScrollEnabled = true
+                    ) {
+                        items(state.items, key = { it.id }) { item ->
+                            TodoItemRow(
+                                item = item,
+                                onChecked = { isChecked ->
+                                    viewModel.onChecked(item, isChecked)
+                                },
+                                onDeleted = {
+                                    viewModel.delete(item)
+                                },
+                                onInfoClicked = {
+                                    toEditItemScreen(item.id)
+                                }
+                            )
+                        }
                     }
                 }
-            }
             }
         }
     }
@@ -269,94 +258,91 @@ fun ErrorScreen(
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-private fun TodoListScreenLightPreview() {
-    ToDoAppTheme(darkTheme = false) {
-        TodoListScreen(
-            viewModel = previewViewModel(),
-            toEditItemScreen = {},
-            darkTheme = false,
-            onThemeChange = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun TodoListScreenDarkPreview() {
-    ToDoAppTheme(darkTheme = true) {
-        TodoListScreen(
-            viewModel = previewViewModel(),
-            toEditItemScreen = {},
-            darkTheme = true,
-            onThemeChange = {}
-        )
-    }
-}
-
-@Composable
-private fun previewViewModel(): TodoListViewModel {
-    val context = LocalContext.current
-    val mockRepository = object : TodoItemRepository {
-        private val items = listOf(
-            TodoItem(
-                id = "1",
-                text = "Todo 1",
-                importance = TodoImportance.DEFAULT,
-                isCompleted = false,
-                createdAt = Date(),
-                modifiedAt = Date()
-            ),
-            TodoItem(
-                id = "2",
-                text = "Todo 2",
-                importance = TodoImportance.HIGH,
-                isCompleted = true,
-                createdAt = Date(),
-                modifiedAt = Date()
-            )
-        )
-        override fun getItemsFlow(): Flow<List<TodoItem>> = flowOf(items)
-
-        override suspend fun getItem(id: String): TodoItem? = items.find { it.id == id }
-
-        override suspend fun addItem(item: TodoItem) {}
-
-        override suspend fun saveItem(item: TodoItem) {}
-
-        override suspend fun deleteItem(item: TodoItem) {}
-
-        override suspend fun synchronize() {}
-    }
-    val mockUserPreferencesRepository = object : UserPreferencesRepositoryInterface {
-        override val userPreferencesFlow: Flow<UserPreferences> = flowOf(
-            UserPreferences(darkTheme = false, showCompleted = true)
-        )
-
-        override suspend fun updateDarkTheme(darkTheme: Boolean) {}
-        override suspend fun updateShowCompleted(showCompleted: Boolean) {}
-        override suspend fun getInitialPreferences(): UserPreferences {
-            return UserPreferences(darkTheme = false, showCompleted = true)
-        }
-    }
-    return TodoListViewModel(
-        application = context.applicationContext as Application,
-        todoItemRepository = mockRepository,
-        userPreferencesRepository = mockUserPreferencesRepository
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ErrorScreenPreview() {
-    ToDoAppTheme {
-        ErrorScreen(
-            message = "Нет подключения к интернету",
-            onRetry = {},
-            onUseOffline = {}
-        )
-    }
-}
-
+//
+// @Preview(showBackground = true)
+// @Composable
+// private fun TodoListScreenLightPreview() {
+//    ToDoAppTheme(darkTheme = false) {
+//        TodoListScreen(
+//            viewModel = previewViewModel(),
+//            toEditItemScreen = {},
+//            onThemeChange = {}
+//        )
+//    }
+// }
+//
+// @Preview(showBackground = true)
+// @Composable
+// private fun TodoListScreenDarkPreview() {
+//    ToDoAppTheme(darkTheme = true) {
+//        TodoListScreen(
+//            viewModel = previewViewModel(),
+//            toEditItemScreen = {},
+//            onThemeChange = {}
+//        )
+//    }
+// }
+//
+// @Composable
+// private fun previewViewModel(): TodoListViewModel {
+//    val context = LocalContext.current
+//    val mockRepository = object : TodoItemRepository {
+//        private val items = listOf(
+//            TodoItem(
+//                id = "1",
+//                text = "Todo 1",
+//                importance = TodoImportance.DEFAULT,
+//                isCompleted = false,
+//                createdAt = Date(),
+//                modifiedAt = Date()
+//            ),
+//            TodoItem(
+//                id = "2",
+//                text = "Todo 2",
+//                importance = TodoImportance.HIGH,
+//                isCompleted = true,
+//                createdAt = Date(),
+//                modifiedAt = Date()
+//            )
+//        )
+//        override fun getItemsFlow(): Flow<List<TodoItem>> = flowOf(items)
+//
+//        override suspend fun getItem(id: String): TodoItem? = items.find { it.id == id }
+//
+//        override suspend fun addItem(item: TodoItem) {}
+//
+//        override suspend fun saveItem(item: TodoItem) {}
+//
+//        override suspend fun deleteItem(item: TodoItem) {}
+//
+//        override suspend fun synchronize() {}
+//    }
+//    val mockUserPreferencesRepository = object : UserPreferencesRepositoryInterface {
+//        override val userPreferencesFlow: Flow<UserPreferences> = flowOf(
+//            UserPreferences(darkTheme = false, showCompleted = true)
+//        )
+//
+//        override suspend fun updateDarkTheme(darkTheme: Boolean) {}
+//        override suspend fun updateShowCompleted(showCompleted: Boolean) {}
+//        override suspend fun getInitialPreferences(): UserPreferences {
+//            return UserPreferences(darkTheme = false, showCompleted = true)
+//        }
+//    }
+//    return TodoListViewModel(
+//        application = context.applicationContext as Application,
+//        todoItemRepository = mockRepository,
+//        userPreferencesRepository = mockUserPreferencesRepository
+//    )
+// }
+//
+// @Preview(showBackground = true)
+// @Composable
+// private fun ErrorScreenPreview() {
+//    ToDoAppTheme {
+//        ErrorScreen(
+//            message = "Нет подключения к интернету",
+//            onRetry = {},
+//            onUseOffline = {}
+//        )
+//    }
+// }

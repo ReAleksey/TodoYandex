@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.todoapp.data.network.NetworkStatusTracker
 import com.example.todoapp.ui.view.TodoApp
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.data.repository.TodoItemRepository
@@ -34,44 +35,29 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 
-
 class TodoListViewModel(
     application: Application,
     private val todoItemRepository: TodoItemRepository,
-    private val userPreferencesRepository: UserPreferencesRepositoryInterface
+    private val userPreferencesRepository: UserPreferencesRepositoryInterface,
+    networkStatusTracker: NetworkStatusTracker
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<TodoListUiState>(TodoListUiState.Loading)
     val uiState: StateFlow<TodoListUiState> = _uiState.asStateFlow()
 
-    private val filterFlow = MutableStateFlow(TodoListUiState.FilterState.NOT_COMPLETED)
     private val _eventFlow = MutableSharedFlow<TodoListEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
-    private val connectivityManager =
-        application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     val itemsFlow: StateFlow<List<TodoItem>> = todoItemRepository.getItemsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val userPreferencesFlow: Flow<UserPreferences> = userPreferencesRepository.userPreferencesFlow
-
-
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    todoItemRepository.synchronize()
-                } catch (e: Exception) {
-                    Log.e("TodoListViewModel", "Error in networkCallback", e)
-                }
-            }
-        }
-    }
+    val userPreferencesFlow: StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow
+        .stateIn(viewModelScope, SharingStarted.Lazily, UserPreferences(darkTheme = false, showCompleted = true))
 
     init {
         viewModelScope.launch {
             combine(
-            todoItemRepository.getItemsFlow(),
+                todoItemRepository.getItemsFlow(),
                 userPreferencesFlow
             ) { items, preferences ->
                 val filterState = if (preferences.showCompleted) {
@@ -94,15 +80,24 @@ class TodoListViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
+            networkStatusTracker.networkStatus.collect { isConnected ->
+                if (isConnected) {
+                    try {
+                        todoItemRepository.synchronize()
+                    } catch (e: Exception) {
+                        Log.d("MyLog", "TodoListViewModel: Error in init: ", e)
+                        _uiState.value = TodoListUiState.Error(e.message ?: "Unknown error")
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
             try {
                 todoItemRepository.synchronize()
             } catch (e: Exception) {
-                Log.d("MyLog", "TodoListViewModel: Error in init: ", e)
                 _uiState.value = TodoListUiState.Error(e.message ?: "Unknown error")
             }
         }
-        val networkRequest = NetworkRequest.Builder().build()
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
     }
 
     fun onChecked(item: TodoItem, checked: Boolean) {
@@ -131,19 +126,6 @@ class TodoListViewModel(
         }
     }
 
-    fun onFilterChange(filterState: TodoListUiState.FilterState) {
-        viewModelScope.launch {
-            filterFlow.emit(filterState)
-        }
-    }
-
-    fun getLastKnownItems(): List<TodoItem> {
-        return when (val currentState = uiState.value) {
-            is TodoListUiState.Loaded -> currentState.items
-            else -> emptyList()
-        }
-    }
-
     fun retryFetchingData() {
         viewModelScope.launch {
             _uiState.value = TodoListUiState.Loading
@@ -152,38 +134,6 @@ class TodoListViewModel(
             } catch (e: Exception) {
                 Log.e("MyLog", "TodoListViewModel: Error in retryFetchingData", e)
                 _uiState.value = TodoListUiState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        connectivityManager.unregisterNetworkCallback(networkCallback)
-    }
-
-    fun useOfflineMode() {
-        viewModelScope.launch {
-            _uiState.value = TodoListUiState.Loaded(
-                items = todoItemRepository.getItemsFlow().first(),
-                filterState = filterFlow.value,
-                doneCount = todoItemRepository.getItemsFlow().first().count { it.isCompleted }
-            )
-        }
-    }
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = this[APPLICATION_KEY] as Application
-                val todoItemRepository =
-                    (application as TodoApp).todoItemRepository
-                val userPreferencesRepository =
-                    application.userPreferencesRepository
-                TodoListViewModel(
-                    application = application,
-                    todoItemRepository = todoItemRepository,
-                    userPreferencesRepository = userPreferencesRepository
-                )
             }
         }
     }
@@ -197,16 +147,39 @@ class TodoListViewModel(
     fun updateShowCompleted(showCompleted: Boolean) {
         viewModelScope.launch {
             userPreferencesRepository.updateShowCompleted(showCompleted)
-            val filterState = if (showCompleted) {
+        }
+    }
+
+    fun useOfflineMode() {
+        viewModelScope.launch {
+            val items = todoItemRepository.getItemsFlow().first()
+            val filterState = if (userPreferencesFlow.value.showCompleted) {
                 TodoListUiState.FilterState.ALL
             } else {
                 TodoListUiState.FilterState.NOT_COMPLETED
             }
-            onFilterChange(filterState)
+            _uiState.value = TodoListUiState.Loaded(
+                items = items.filter(filterState.filter),
+                filterState = filterState,
+                doneCount = items.count { it.isCompleted }
+            )
         }
     }
 
-    suspend fun getInitialPreferences(): UserPreferences {
-        return userPreferencesRepository.getInitialPreferences()
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = this[APPLICATION_KEY] as Application
+                val todoItemRepository = (application as TodoApp).todoItemRepository
+                val userPreferencesRepository = application.userPreferencesRepository
+                val networkStatusTracker = NetworkStatusTracker(application.applicationContext)
+                TodoListViewModel(
+                    application = application,
+                    todoItemRepository = todoItemRepository,
+                    userPreferencesRepository = userPreferencesRepository,
+                    networkStatusTracker = networkStatusTracker
+                )
+            }
+        }
     }
 }
