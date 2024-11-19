@@ -18,13 +18,15 @@ fun TodoItemRow(
     onChecked: (Boolean) -> Unit,
     onDeleted: () -> Unit,
     onInfoClicked: () -> Unit,
+    dismissOnCheck: Boolean
 ) {
     BoxWithShadows(
         sides = Sides.LEFT_AND_RIGHT,
     ) {
         RowSwipe(
             completed = item.isCompleted,
-            onChecked = { onChecked(true) },
+            dismissOnCheck = dismissOnCheck,
+            onChecked = { onChecked(!item.isCompleted) },
             onDelete = onDeleted,
             modifier = Modifier
                 .fillMaxWidth()
@@ -32,7 +34,7 @@ fun TodoItemRow(
         ) {
             TodoItemRowContent(
                 item = item,
-                onChecked = onChecked,
+                onChecked = { onChecked(!item.isCompleted) },
                 onInfoClicked = onInfoClicked,
                 onRowClick = onInfoClicked,
                 modifier = Modifier

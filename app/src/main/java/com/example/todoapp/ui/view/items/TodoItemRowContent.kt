@@ -188,7 +188,8 @@ private fun TodoItemRowLightPreview() {
             ),
             onChecked = {},
             onDeleted = {},
-            onInfoClicked = {}
+            onInfoClicked = {},
+            dismissOnCheck = false
         )
     }
 }
@@ -208,7 +209,8 @@ private fun TodoItemRowDarkPreview() {
             ),
             onChecked = {},
             onDeleted = {},
-            onInfoClicked = {}
+            onInfoClicked = {},
+            dismissOnCheck = false
         )
     }
 }

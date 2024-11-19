@@ -3,6 +3,9 @@ package com.example.todoapp.ui.view.screens
 import android.app.Application
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -126,7 +129,13 @@ fun TodoListScreen(
     }
 
     Box(modifier = Modifier.pullRefresh(pullRefreshState)) {
-        Crossfade(targetState = isLoading) { loading ->
+        Crossfade(
+            targetState = isLoading,
+            animationSpec = tween(
+                durationMillis = 1500,
+                easing = LinearEasing
+            )
+        ) { loading ->
             if (loading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -229,7 +238,8 @@ fun TodoListScreen(
                                                 },
                                                 onInfoClicked = {
                                                     toEditItemScreen(item.id)
-                                                }
+                                                },
+                                                dismissOnCheck = (filterState == TodoListUiState.FilterState.NOT_COMPLETED)
                                             )
                                         }
                                         item {
@@ -320,7 +330,8 @@ fun TodoListScreen(
                                         },
                                         onInfoClicked = {
                                             toEditItemScreen(item.id)
-                                        }
+                                        },
+                                        dismissOnCheck = (filterState == TodoListUiState.FilterState.NOT_COMPLETED)
                                     )
                                 }
                             }
