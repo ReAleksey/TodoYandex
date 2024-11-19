@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.todoapp.data.network.NetworkStatusProvider
 import com.example.todoapp.data.network.NetworkStatusTracker
 import com.example.todoapp.data.repository.TodoItemRepository
 import com.example.todoapp.data.repository.UserPreferences
@@ -34,7 +35,7 @@ class TodoListViewModel(
     application: Application,
     private val todoItemRepository: TodoItemRepository,
     private val userPreferencesRepository: UserPreferencesRepositoryInterface,
-    networkStatusTracker: NetworkStatusTracker
+    networkStatusTracker: NetworkStatusProvider
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<TodoListUiState>(TodoListUiState.Loading)

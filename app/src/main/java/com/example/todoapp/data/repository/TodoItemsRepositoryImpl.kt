@@ -1,13 +1,10 @@
 package com.example.todoapp.data.repository
 
-import com.example.todoapp.utils.toDomainModel
-import android.content.Context
-import android.provider.Settings
 import android.util.Log
 import com.example.todoapp.data.local.LocalDataSource
-import com.example.todoapp.data.network.NetworkModule
 import com.example.todoapp.data.remote.RemoteDataSource
 import com.example.todoapp.model.TodoItem
+import com.example.todoapp.utils.toDomainModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
