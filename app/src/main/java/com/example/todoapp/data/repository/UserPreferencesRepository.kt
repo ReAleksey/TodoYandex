@@ -44,7 +44,6 @@ class UserPreferencesRepository(private val context: Context) : UserPreferencesR
     }
 }
 
-
 data class UserPreferences(
     val darkTheme: Boolean,
     val showCompleted: Boolean

@@ -35,7 +35,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-
 @Composable
 internal fun DeadlineItem(
     deadline: LocalDate?, // чтобы не передавать null сделать пустой state -> решил другим путём, чтобы не переписывать большую часть кода

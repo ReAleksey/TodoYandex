@@ -5,8 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.Composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.todoapp.data.repository.UserPreferences
 import com.example.todoapp.ui.theme.ToDoAppTheme
 import com.example.todoapp.ui.view.viewmodel.TodoListViewModel
 import kotlinx.coroutines.runBlocking
@@ -14,39 +17,28 @@ import kotlinx.coroutines.runBlocking
 class MainActivity : ComponentActivity() {
 
     private val listViewModel: TodoListViewModel by viewModels { TodoListViewModel.Factory }
+    private lateinit var initialPreferences: UserPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val initialPreferences = runBlocking {
+        initialPreferences = runBlocking {
             listViewModel.getInitialPreferences()
         }
 
         setContent {
-            ToDoAppTheme(darkTheme = initialPreferences.darkTheme) {
+            var darkTheme by remember { mutableStateOf(initialPreferences.darkTheme) }
+
+            ToDoAppTheme(darkTheme = darkTheme) {
                 TodoComposeApp(
                     listViewModel = listViewModel,
-                    darkTheme = initialPreferences.darkTheme,
-                    onThemeChange = { listViewModel.updateDarkTheme(!initialPreferences.darkTheme) }
+                    onThemeChange = {
+                        darkTheme = !darkTheme
+                        listViewModel.updateDarkTheme(darkTheme)
+                    }
                 )
             }
         }
-    }
-
-    @Composable
-    fun TodoComposeApp(
-        listViewModel: TodoListViewModel,
-        darkTheme: Boolean,
-        onThemeChange: () -> Unit
-    ) {
-        val navController = rememberNavController()
-
-        NavGraph(
-            navController = navController,
-            listViewModel = listViewModel,
-            darkTheme = darkTheme,
-            onThemeChange = onThemeChange
-        )
     }
 }

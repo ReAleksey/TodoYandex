@@ -44,7 +44,7 @@ internal fun TodoListToolbar(
 ) {
     val countColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    val progress = 1f - (scrollBehavior.state.collapsedFraction)
+    val progress = 1f - scrollBehavior.state.collapsedFraction
 
     val textSize = getToolbarValue(
         MaterialTheme.typography.displayLarge.fontSize.value,
@@ -63,7 +63,7 @@ internal fun TodoListToolbar(
             .setShadow(progress),
         windowInsets = WindowInsets(
             left = 0.dp,
-            top = 0.dp,
+            top = if (progress < 0.5f) 4.dp else 0.dp,
             right = 0.dp,
             bottom = 4.dp
         ),

@@ -1,5 +1,6 @@
 package com.example.todoapp.ui.view.screens
 
+import android.util.Log
 import androidx.compose.animation.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +63,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.util.Date
-
 
 @Serializable
 data class EditTodoItem(
