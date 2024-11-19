@@ -182,4 +182,8 @@ class TodoListViewModel(
             }
         }
     }
+
+    suspend fun getInitialPreferences(): UserPreferences {
+        return userPreferencesRepository.getInitialPreferences()
+    }
 }

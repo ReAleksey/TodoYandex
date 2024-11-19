@@ -1,5 +1,6 @@
 package com.example.todoapp.ui.view.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +67,7 @@ fun TodoListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var refreshing by remember { mutableStateOf(false) }
     val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = refreshing)
+
     val userPreferences by viewModel.userPreferencesFlow.collectAsStateWithLifecycle()
 
     val filterState = if (uiState is TodoListUiState.Loaded) {
@@ -136,30 +138,32 @@ fun TodoListScreen(
 
                 is TodoListUiState.Loaded -> {
                     val state = uiState as TodoListUiState.Loaded
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                start = 8.dp,
-                                end = 8.dp,
-                                top = paddingValues.calculateTopPadding()
-                            ),
-                        state = lazyListState,
-                        userScrollEnabled = true
-                    ) {
-                        items(state.items, key = { it.id }) { item ->
-                            TodoItemRow(
-                                item = item,
-                                onChecked = { isChecked ->
-                                    viewModel.onChecked(item, isChecked)
-                                },
-                                onDeleted = {
-                                    viewModel.delete(item)
-                                },
-                                onInfoClicked = {
-                                    toEditItemScreen(item.id)
-                                }
-                            )
+                    AnimatedVisibility(visible = !refreshing) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    start = 8.dp,
+                                    end = 8.dp,
+                                    top = paddingValues.calculateTopPadding()
+                                ),
+                            state = lazyListState,
+                            userScrollEnabled = true
+                        ) {
+                            items(state.items, key = { it.id }) { item ->
+                                TodoItemRow(
+                                    item = item,
+                                    onChecked = { isChecked ->
+                                        viewModel.onChecked(item, isChecked)
+                                    },
+                                    onDeleted = {
+                                        viewModel.delete(item)
+                                    },
+                                    onInfoClicked = {
+                                        toEditItemScreen(item.id)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
