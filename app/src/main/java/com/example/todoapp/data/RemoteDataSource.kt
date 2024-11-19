@@ -1,4 +1,4 @@
-package com.example.todoapp.data.remote
+package com.example.todoapp.data
 
 import com.example.todoapp.data.local.RevisionStorage
 import com.example.todoapp.data.network.TodoApiService

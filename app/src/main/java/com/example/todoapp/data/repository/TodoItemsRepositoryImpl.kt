@@ -2,7 +2,7 @@ package com.example.todoapp.data.repository
 
 import android.util.Log
 import com.example.todoapp.data.local.LocalDataSource
-import com.example.todoapp.data.remote.RemoteDataSource
+import com.example.todoapp.data.RemoteDataSource
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.utils.toDomainModel
 import kotlinx.coroutines.Dispatchers

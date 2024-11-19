@@ -1,3 +1,5 @@
+import java.util.Properties
+
 configurations.all {
     exclude(group = "com.intellij", module = "annotations")
 }
@@ -11,6 +13,12 @@ plugins {
 
     id("com.google.devtools.ksp")
 //    id("org.jetbrains.kotlin.kapt") version "2.0.21"
+}
+
+val secretsProperties = Properties()
+val secretsPropertiesFile = rootProject.file("app/secrets.properties")
+if (secretsPropertiesFile.exists()) {
+    secretsProperties.load(secretsPropertiesFile.inputStream())
 }
 
 android {
@@ -28,6 +36,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "BEARER_TOKEN", "\"${secretsProperties["BEARER_TOKEN"]}\"")
+        buildConfigField("String", "OAUTH_TOKEN", "\"${secretsProperties["OAUTH_TOKEN"]}\"")
     }
 
     buildTypes {
@@ -48,6 +59,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"

@@ -9,11 +9,11 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.todoapp.data.TodoDatabase
+import com.example.todoapp.data.local.TodoDatabase
 import com.example.todoapp.data.local.LocalDataSource
 import com.example.todoapp.data.local.RevisionStorage
 import com.example.todoapp.data.network.NetworkModule
-import com.example.todoapp.data.remote.RemoteDataSource
+import com.example.todoapp.data.RemoteDataSource
 import com.example.todoapp.data.repository.TodoItemRepository
 import com.example.todoapp.data.repository.TodoItemsRepositoryImpl
 import com.example.todoapp.data.repository.UserPreferencesRepository
