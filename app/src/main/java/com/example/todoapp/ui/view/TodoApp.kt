@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.todoapp.data.TodoDatabase
 import com.example.todoapp.data.local.LocalDataSource
+import com.example.todoapp.data.local.RevisionStorage
 import com.example.todoapp.data.network.NetworkModule
 import com.example.todoapp.data.remote.RemoteDataSource
 import com.example.todoapp.data.repository.TodoItemRepository
@@ -29,13 +30,14 @@ class TodoApp : Application() {
 
     val todoItemRepository: TodoItemRepository by lazy {
         val localDataSource = LocalDataSource(database.todoItemDao())
+        val revisionStorage = RevisionStorage(this)
         val remoteDataSource = RemoteDataSource(
             apiService = NetworkModule.apiService,
-            deviceId = deviceId.toString()
+            deviceId = deviceId.toString(),
+            revisionStorage = revisionStorage
         )
 
         TodoItemsRepositoryImpl(
-            context = this,
             localDataSource = localDataSource,
             remoteDataSource = remoteDataSource
         )

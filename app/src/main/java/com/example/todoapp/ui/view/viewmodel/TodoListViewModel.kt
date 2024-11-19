@@ -1,10 +1,6 @@
 package com.example.todoapp.ui.view.viewmodel
 
 import android.app.Application
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkRequest
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -13,15 +9,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.todoapp.data.network.NetworkStatusTracker
-import com.example.todoapp.ui.view.TodoApp
-import com.example.todoapp.model.TodoItem
 import com.example.todoapp.data.repository.TodoItemRepository
 import com.example.todoapp.data.repository.UserPreferences
 import com.example.todoapp.data.repository.UserPreferencesRepositoryInterface
+import com.example.todoapp.model.TodoItem
+import com.example.todoapp.ui.view.TodoApp
 import com.example.todoapp.utils.TodoListEvent
 import com.example.todoapp.utils.TodoListUiState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,9 +42,6 @@ class TodoListViewModel(
 
     private val _eventFlow = MutableSharedFlow<TodoListEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
-
-    val itemsFlow: StateFlow<List<TodoItem>> = todoItemRepository.getItemsFlow()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val userPreferencesFlow: StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, UserPreferences(darkTheme = false, showCompleted = true))
@@ -86,7 +78,7 @@ class TodoListViewModel(
                         todoItemRepository.synchronize()
                     } catch (e: Exception) {
                         Log.d("MyLog", "TodoListViewModel: Error in init: ", e)
-                        _uiState.value = TodoListUiState.Error(e.message ?: "Unknown error")
+                        _eventFlow.emit(TodoListEvent.ShowSnackbar("Failed to synchronize data"))
                     }
                 }
             }

@@ -3,7 +3,9 @@ package com.example.todoapp.data.repository
 import com.example.todoapp.utils.toDomainModel
 import android.content.Context
 import android.provider.Settings
+import android.util.Log
 import com.example.todoapp.data.local.LocalDataSource
+import com.example.todoapp.data.network.NetworkModule
 import com.example.todoapp.data.remote.RemoteDataSource
 import com.example.todoapp.model.TodoItem
 import kotlinx.coroutines.Dispatchers
@@ -14,12 +16,10 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class TodoItemsRepositoryImpl(
-    context: Context,
     private val localDataSource: LocalDataSource,
     private val remoteDataSource: RemoteDataSource
 ) : TodoItemRepository {
 
-    private val deviceId: String = getDeviceId(context)
     private val mutex = Mutex()
 
     override fun getItemsFlow(): Flow<List<TodoItem>> = localDataSource.getAllItems()
@@ -28,63 +28,49 @@ class TodoItemsRepositoryImpl(
 
     override suspend fun addItem(item: TodoItem) {
         localDataSource.insertItem(item)
-        synchronize()
+        try {
+            remoteDataSource.addTodoItem(item)
+        } catch (e: Exception) {
+            Log.e("MyLog", "TodoItemsRepositoryImpl: Error in addItem", e)
+        }
     }
 
     override suspend fun saveItem(item: TodoItem) {
         localDataSource.updateItem(item)
-        synchronize()
+        try {
+            remoteDataSource.updateTodoItem(item)
+        } catch (e: Exception) {
+            Log.e("MyLog", "TodoItemsRepositoryImpl: Error in saveItem", e)
+        }
     }
 
     override suspend fun deleteItem(item: TodoItem) {
         localDataSource.deleteItem(item)
-        synchronize()
+        try {
+            remoteDataSource.deleteTodoItem(item.id)
+        } catch (e: Exception) {
+            Log.e("MyLog", "TodoItemsRepositoryImpl: Error in deleteItem", e)
+        }
     }
 
     override suspend fun synchronize() {
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 executeWithRetry {
-                    // Шаг 1: Получение данных с сервера
                     val serverResponse = remoteDataSource.getTodoList()
                     val serverItems = serverResponse.list.map { it.toDomainModel() }
 
-                    // Шаг 2: Получение локальных данных
                     val localItems = localDataSource.getCurrentItems()
 
-                    // Шаг 3: Слияние данных
                     val mergedItems = mergeData(localItems, serverItems)
 
-                    // Шаг 4: Обновление локальной базы данных
                     localDataSource.deleteAllItems()
                     localDataSource.insertItems(mergedItems)
 
-                    // Шаг 5: Отправка обновлённых данных на сервер
                     remoteDataSource.updateTodoList(mergedItems)
                 }
             }
         }
-    }
-
-    private suspend fun <T> executeWithRetry(
-        maxRetries: Int = 3,
-        initialDelayMillis: Long = 1000,
-        maxDelayMillis: Long = 5000,
-        action: suspend () -> T
-    ): T {
-        var currentDelay = initialDelayMillis
-        repeat(maxRetries) { attempt ->
-            try {
-                return action()
-            } catch (e: Exception) {
-                if (attempt == maxRetries - 1) {
-                    throw e
-                }
-                delay(currentDelay)
-                currentDelay = (currentDelay * 2).coerceAtMost(maxDelayMillis)
-            }
-        }
-        throw Exception("Failed after $maxRetries retries")
     }
 
     private fun mergeData(
@@ -120,7 +106,24 @@ class TodoItemsRepositoryImpl(
         return mergedMap.values.toList()
     }
 
-    private fun getDeviceId(context: Context): String {
-        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+    private suspend fun <T> executeWithRetry(
+        maxRetries: Int = 3,
+        initialDelayMillis: Long = 1000,
+        maxDelayMillis: Long = 5000,
+        action: suspend () -> T
+    ): T {
+        var currentDelay = initialDelayMillis
+        repeat(maxRetries) { attempt ->
+            try {
+                return action()
+            } catch (e: Exception) {
+                if (attempt == maxRetries - 1) {
+                    throw e
+                }
+                delay(currentDelay)
+                currentDelay = (currentDelay * 2).coerceAtMost(maxDelayMillis)
+            }
+        }
+        throw Exception("Failed after $maxRetries retries")
     }
 }
