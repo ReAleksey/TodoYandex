@@ -1,6 +1,7 @@
 package com.example.todoapp.ui.view.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +13,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,7 +59,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object TodoList
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun TodoListScreen(
     viewModel: TodoListViewModel,
@@ -65,15 +70,32 @@ fun TodoListScreen(
     val lazyListState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val snackbarHostState = remember { SnackbarHostState() }
-    var refreshing by remember { mutableStateOf(false) }
-    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = refreshing)
-
     val userPreferences by viewModel.userPreferencesFlow.collectAsStateWithLifecycle()
 
     val filterState = if (uiState is TodoListUiState.Loaded) {
         (uiState as TodoListUiState.Loaded).filterState
     } else {
         TodoListUiState.FilterState.ALL
+    }
+
+    var refreshing by remember { mutableStateOf(false) }
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = refreshing,
+        onRefresh = {
+            refreshing = true
+            viewModel.retryFetchingData()
+            refreshing = false
+        }
+    )
+
+    var isLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(refreshing) {
+        if (refreshing) {
+            isLoading = true
+        } else {
+            isLoading = false
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -86,128 +108,143 @@ fun TodoListScreen(
         }
     }
 
-    SwipeRefresh(
-        state = swipeRefreshState,
-        onRefresh = {
-            refreshing = true
-            viewModel.retryFetchingData()
-            refreshing = false
-        }
-    ) {
-        Scaffold(
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-            containerColor = MaterialTheme.colorScheme.background,
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                TodoListToolbar(
-                    scrollBehavior = scrollBehavior,
-                    doneCount = when (val state = uiState) {
-                        is TodoListUiState.Loaded -> state.doneCount
-                        else -> 0
-                    },
-                    filterState = filterState,
-                    onFilterChange = {
-                        viewModel.updateShowCompleted(it == TodoListUiState.FilterState.ALL)
-                    },
-                    darkTheme = userPreferences.darkTheme,
-                    onThemeChange = onThemeChange
-                )
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { toEditItemScreen(null) },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
+    Box(modifier = Modifier.pullRefresh(pullRefreshState)) {
+        Crossfade(targetState = isLoading) { loading ->
+            if (loading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(id = R.string.add))
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    )
                 }
-            }
-        ) { paddingValues ->
-            when (uiState) {
-                is TodoListUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primaryContainer
+            } else {
+                Scaffold(
+                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+                    containerColor = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    topBar = {
+                        TodoListToolbar(
+                            scrollBehavior = scrollBehavior,
+                            doneCount = when (val state = uiState) {
+                                is TodoListUiState.Loaded -> state.doneCount
+                                else -> 0
+                            },
+                            filterState = filterState,
+                            onFilterChange = {
+                                viewModel.updateShowCompleted(it == TodoListUiState.FilterState.ALL)
+                            },
+                            darkTheme = userPreferences.darkTheme,
+                            onThemeChange = onThemeChange
                         )
-                    }
-                }
-
-                is TodoListUiState.Loaded -> {
-                    val state = uiState as TodoListUiState.Loaded
-                    AnimatedVisibility(visible = !refreshing) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(
-                                    start = 8.dp,
-                                    end = 8.dp,
-                                    top = paddingValues.calculateTopPadding()
-                                ),
-                            state = lazyListState,
-                            userScrollEnabled = true
+                    },
+                    floatingActionButton = {
+                        FloatingActionButton(
+                            onClick = { toEditItemScreen(null) },
+                            shape = CircleShape,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.inverseOnSurface
                         ) {
-                            items(state.items, key = { it.id }) { item ->
-                                TodoItemRow(
-                                    item = item,
-                                    onChecked = { isChecked ->
-                                        viewModel.onChecked(item, isChecked)
-                                    },
-                                    onDeleted = {
-                                        viewModel.delete(item)
-                                    },
-                                    onInfoClicked = {
-                                        toEditItemScreen(item.id)
-                                    }
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = stringResource(id = R.string.add)
+                            )
+                        }
+                    }
+                ) { paddingValues ->
+                    when (uiState) {
+                        is TodoListUiState.Loading -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator(
+                                    color = MaterialTheme.colorScheme.primaryContainer
                                 )
+                            }
+                        }
+
+                        is TodoListUiState.Loaded -> {
+                            val state = uiState as TodoListUiState.Loaded
+                            AnimatedVisibility(visible = !refreshing) {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            start = 8.dp,
+                                            end = 8.dp,
+                                            top = paddingValues.calculateTopPadding()
+                                        ),
+                                    state = lazyListState,
+                                    userScrollEnabled = true
+                                ) {
+                                    items(state.items, key = { it.id }) { item ->
+                                        TodoItemRow(
+                                            item = item,
+                                            onChecked = { isChecked ->
+                                                viewModel.onChecked(item, isChecked)
+                                            },
+                                            onDeleted = {
+                                                viewModel.delete(item)
+                                            },
+                                            onInfoClicked = {
+                                                toEditItemScreen(item.id)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        is TodoListUiState.Error -> {
+                            val message = (uiState as TodoListUiState.Error).message
+                            ErrorScreen(
+                                message = message,
+                                onRetry = { viewModel.retryFetchingData() },
+                                onUseOffline = { viewModel.useOfflineMode() },
+                                modifier = Modifier.padding(paddingValues)
+                            )
+                        }
+
+                        TodoListUiState.Offline -> {
+                            val state = uiState as TodoListUiState.Loaded
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                        start = 8.dp,
+                                        end = 8.dp,
+                                        top = paddingValues.calculateTopPadding()
+                                    ),
+                                state = lazyListState,
+                                userScrollEnabled = true
+                            ) {
+                                items(state.items, key = { it.id }) { item ->
+                                    TodoItemRow(
+                                        item = item,
+                                        onChecked = { isChecked ->
+                                            viewModel.onChecked(item, isChecked)
+                                        },
+                                        onDeleted = {
+                                            viewModel.delete(item)
+                                        },
+                                        onInfoClicked = {
+                                            toEditItemScreen(item.id)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
-                is TodoListUiState.Error -> {
-                    val message = (uiState as TodoListUiState.Error).message
-                    ErrorScreen(
-                        message = message,
-                        onRetry = { viewModel.retryFetchingData() },
-                        onUseOffline = { viewModel.useOfflineMode() },
-                        modifier = Modifier.padding(paddingValues)
-                    )
-                }
-
-                TodoListUiState.Offline -> {
-                    val state = uiState as TodoListUiState.Loaded
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                start = 8.dp,
-                                end = 8.dp,
-                                top = paddingValues.calculateTopPadding()
-                            ),
-                        state = lazyListState,
-                        userScrollEnabled = true
-                    ) {
-                        items(state.items, key = { it.id }) { item ->
-                            TodoItemRow(
-                                item = item,
-                                onChecked = { isChecked ->
-                                    viewModel.onChecked(item, isChecked)
-                                },
-                                onDeleted = {
-                                    viewModel.delete(item)
-                                },
-                                onInfoClicked = {
-                                    toEditItemScreen(item.id)
-                                }
-                            )
-                        }
-                    }
-                }
             }
+            PullRefreshIndicator(
+                refreshing = refreshing,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                contentColor = MaterialTheme.colorScheme.primaryContainer
+            )
         }
     }
 }
