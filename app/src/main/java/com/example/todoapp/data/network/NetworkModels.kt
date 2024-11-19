@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TodoItemNetwork(
-    val id: String,
-    val text: String,
-    val importance: ImportanceNetwork,
-    val deadline: Long? = null,
+    @SerialName("id") val id: String,
+    @SerialName("text") val text: String,
+    @SerialName("importance") val importance: ImportanceNetwork,
+    @SerialName("deadline") val deadline: Long? = null,
     @SerialName("done") val isCompleted: Boolean,
     @SerialName("color") val color: String? = null,
     @SerialName("created_at") val createdAt: Long,
