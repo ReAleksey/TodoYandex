@@ -4,6 +4,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import androidx.room.TypeConverter
+import com.example.todoapp.model.TodoImportance
 
 class Converters {
 
@@ -15,6 +16,16 @@ class Converters {
     @TypeConverter
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
+    }
+
+    @TypeConverter
+    fun fromImportance(value: String): TodoImportance {
+        return TodoImportance.valueOf(value)
+    }
+
+    @TypeConverter
+    fun importanceToString(importance: TodoImportance): String {
+        return importance.name
     }
 }
 
