@@ -18,17 +18,18 @@ interface TodoItemDao {
     suspend fun getItemById(id: String): TodoItem?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertItem(item: TodoItem)
+    suspend fun insertItem(item: TodoItem): Long
 
     @Update
-    suspend fun updateItem(item: TodoItem)
+    suspend fun updateItem(item: TodoItem): Int
 
     @Delete
-    suspend fun deleteItem(item: TodoItem)
+    suspend fun deleteItem(item: TodoItem): Int
 
     @Query("DELETE FROM todo_items")
-    suspend fun deleteAllItems()
+    suspend fun deleteAllItems(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertItems(items: List<TodoItem>)
+    suspend fun insertItems(items: List<TodoItem>): List<Long>
 }
+

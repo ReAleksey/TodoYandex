@@ -22,8 +22,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
 import java.util.UUID
+import javax.inject.Inject
 
-class EditTodoItemViewModel(
+class EditTodoItemViewModel @Inject constructor(
     private val todoItemRepository: TodoItemRepository
 ) : ViewModel() {
 
@@ -37,35 +38,33 @@ class EditTodoItemViewModel(
     fun setItem(itemId: String?) {
         job?.cancel()
         job = viewModelScope.launch {
-            viewModelScope.launch {
-                try {
-                    val item = withContext(Dispatchers.IO) {
-                        itemId?.let { todoItemRepository.getItem(itemId) }
-                    }
-                    _uiState.emit(
-                        if (item == null)
-                            EditTodoItemUiState.Loaded(
-                                TodoItem(
-                                    id = UUID.randomUUID().toString(),
-                                    text = ""
-                                ),
-                                EditTodoItemUiState.ItemState.NEW
-                            )
-                        else
-                            EditTodoItemUiState.Loaded(
-                                item,
-                                EditTodoItemUiState.ItemState.EDIT
-                            )
-                    )
-                } catch (e: Exception) {
-                    _uiState.emit(EditTodoItemUiState.Error(e))
+            try {
+                val item = withContext(Dispatchers.IO) {
+                    itemId?.let { todoItemRepository.getItem(itemId) }
                 }
+                _uiState.emit(
+                    if (item == null)
+                        EditTodoItemUiState.Loaded(
+                            TodoItem(
+                                id = UUID.randomUUID().toString(),
+                                text = ""
+                            ),
+                            EditTodoItemUiState.ItemState.NEW
+                        )
+                    else
+                        EditTodoItemUiState.Loaded(
+                            item,
+                            EditTodoItemUiState.ItemState.EDIT
+                        )
+                )
+            } catch (e: Exception) {
+                _uiState.emit(EditTodoItemUiState.Error(e))
             }
         }
     }
 
     fun save() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 if (uiState.value is EditTodoItemUiState.Loaded) {
                     val state = uiState.value as EditTodoItemUiState.Loaded
@@ -75,6 +74,7 @@ class EditTodoItemViewModel(
                                 modifiedAt = Date()
                             )
                             todoItemRepository.saveItem(updatedItem)
+                            _eventFlow.emit(EditTodoItemEvent.ShowSnackbar("Item saved"))
                         }
 
                         EditTodoItemUiState.ItemState.NEW -> {
@@ -83,6 +83,7 @@ class EditTodoItemViewModel(
                                 modifiedAt = Date()
                             )
                             todoItemRepository.addItem(newItem)
+                            _eventFlow.emit(EditTodoItemEvent.ShowSnackbar("Item added"))
                         }
                     }
                 }
@@ -105,7 +106,7 @@ class EditTodoItemViewModel(
     }
 
     fun delete() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 if (uiState.value is EditTodoItemUiState.Loaded) {
                     val item = (uiState.value as EditTodoItemUiState.Loaded).item

@@ -2,10 +2,12 @@ package com.example.todoapp.data.network
 
 import okhttp3.Interceptor
 import okhttp3.Response
+import com.example.todoapp.BuildConfig
+
 
 class AuthInterceptor : Interceptor {
-    private val bearerToken = "Bearer Lalaith"
-    private val oAuthToken = "OAuth y0_AgAAAAAkCDffAARC0QAAAAEYab1ZAAAjDkLLqB1ByKzR2RvUhcyYsgSnPQ"
+    private val bearerToken = BuildConfig.BEARER_TOKEN
+    private val oAuthToken = BuildConfig.OAUTH_TOKEN
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()
@@ -14,3 +16,4 @@ class AuthInterceptor : Interceptor {
         return chain.proceed(request)
     }
 }
+
