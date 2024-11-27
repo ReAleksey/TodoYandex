@@ -3,6 +3,7 @@ package com.example.todoapp.ui.view.viewmodel
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -30,13 +31,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
+import javax.inject.Inject
 
-class TodoListViewModel(
-    application: Application,
+class TodoListViewModel @Inject constructor(
     private val todoItemRepository: TodoItemRepository,
     private val userPreferencesRepository: UserPreferencesRepositoryInterface,
     networkStatusTracker: NetworkStatusProvider
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TodoListUiState>(TodoListUiState.Loading)
     val uiState: StateFlow<TodoListUiState> = _uiState.asStateFlow()
@@ -167,7 +168,6 @@ class TodoListViewModel(
                 val userPreferencesRepository = application.userPreferencesRepository
                 val networkStatusTracker = NetworkStatusTracker(application.applicationContext)
                 TodoListViewModel(
-                    application = application,
                     todoItemRepository = todoItemRepository,
                     userPreferencesRepository = userPreferencesRepository,
                     networkStatusTracker = networkStatusTracker

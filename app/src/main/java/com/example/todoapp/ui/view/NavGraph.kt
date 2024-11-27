@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,7 +24,8 @@ import com.example.todoapp.ui.view.screens.TodoListScreen
 fun NavGraph(
     navController: NavHostController,
     listViewModel: TodoListViewModel,
-    onThemeChange: () -> Unit
+    onThemeChange: () -> Unit,
+    viewModelFactory: ViewModelProvider.Factory
 ) {
     NavHost(
         navController = navController,
@@ -71,7 +73,7 @@ fun NavGraph(
                 )
             },
         ) { backStackEntry ->
-            val editItemViewModel: EditTodoItemViewModel = viewModel(factory = EditTodoItemViewModel.Factory)
+            val editItemViewModel: EditTodoItemViewModel = viewModel(factory = viewModelFactory)
             val editItem: EditTodoItem = backStackEntry.toRoute()
             EditTodoItemScreen(
                 itemId = editItem.itemId,

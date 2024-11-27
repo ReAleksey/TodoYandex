@@ -4,9 +4,10 @@ accompanistSystemuicontroller = "0.36.0"
 agp = "8.6.0"
 androidxMaterial = "1.7.3"
 annotations = "23.0.0"
+dagger = "2.52"
 datastorePreferences = "1.1.1"
 fragmentKtx = "1.8.5"
-kotlin = "2.0.0"
+kotlin = "1.9.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -24,9 +25,12 @@ navigationRuntimeKtx = "2.8.3"
 navigationCompose = "2.8.3"
 retrofit = "2.9.0"
 retrofit2KotlinxSerializationConverter = "0.8.0"
-roomCompiler = "2.5.0"
+roomCompiler = "2.6.1" #"2.5.2"
 serialization = "1.6.3"
 workRuntimeKtx = "2.9.0"
+firebaseFirestoreKtx = "25.1.1"
+runner = "1.6.1"
+composeCompiler = "1.5.3"
 
 
 [libraries]
@@ -41,6 +45,8 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomComp
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomCompiler" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -65,12 +71,15 @@ material-v1120 = { module = "com.google.android.material:material", version.ref 
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofit2KotlinxSerializationConverter" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
+androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+#compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+compose = { id = "org.jetbrains.compose", version.ref = "composeCompiler" }
 
 

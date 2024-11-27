@@ -22,8 +22,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
 import java.util.UUID
+import javax.inject.Inject
 
-class EditTodoItemViewModel(
+class EditTodoItemViewModel @Inject constructor(
     private val todoItemRepository: TodoItemRepository
 ) : ViewModel() {
 

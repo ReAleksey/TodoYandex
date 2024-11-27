@@ -8,8 +8,9 @@ import com.example.todoapp.data.network.TodoListResponse
 import com.example.todoapp.model.TodoItem
 import com.example.todoapp.utils.toNetworkModel
 import retrofit2.Response
+import javax.inject.Inject
 
-class RemoteDataSource(
+class RemoteDataSource @Inject constructor(
     private val apiService: TodoApiService,
     private val deviceId: String,
     private val revisionStorage: RevisionStorage

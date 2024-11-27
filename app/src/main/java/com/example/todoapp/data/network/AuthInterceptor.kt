@@ -1,6 +1,5 @@
 package com.example.todoapp.data.network
 
-import android.util.Log
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.example.todoapp.BuildConfig
@@ -17,3 +16,4 @@ class AuthInterceptor : Interceptor {
         return chain.proceed(request)
     }
 }
+

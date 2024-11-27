@@ -7,12 +7,17 @@ import android.net.NetworkRequest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 interface NetworkStatusProvider {
     val networkStatus: Flow<Boolean>
 }
 
-class NetworkStatusTracker(context: Context) : NetworkStatusProvider {
+@Singleton
+class NetworkStatusTracker @Inject constructor (
+    private val context: Context
+) : NetworkStatusProvider {
 
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

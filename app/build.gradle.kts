@@ -5,14 +5,16 @@ configurations.all {
 }
 
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+//    alias(libs.plugins.android.application)
+//    alias(libs.plugins.kotlin.android)
+//    alias(libs.plugins.kotlin.serialization)
+//    id("org.jetbrains.kotlin.kapt")
+//    id("org.jetbrains.compose")
 
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.kotlin.serialization)
-
-    id("com.google.devtools.ksp")
-//    id("org.jetbrains.kotlin.kapt") version "2.0.21"
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.compose")
+    id("org.jetbrains.kotlin.kapt")
 }
 
 val secretsProperties = Properties()
@@ -62,18 +64,23 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    kapt {
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+        correctErrorTypes = true
+    }
 
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -84,6 +91,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.runner)
+    implementation(libs.androidx.espresso.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -96,28 +106,30 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.material.v1120)
-
     implementation(libs.retrofit)
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.logging.interceptor)
-
     implementation(libs.kotlinx.serialization.json.v173)
-
     implementation(libs.kotlinx.coroutines.android)
-
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.material3)
-
-    implementation(libs.androidx.room.compiler)
+//    implementation(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
+    kapt(libs.androidx.room.compiler)
     implementation(libs.annotations)
-
     implementation(libs.androidx.datastore.preferences)
-
     implementation(libs.androidx.material)
 
+    implementation(libs.dagger)
+    kapt(libs.dagger.compiler)
+
+    implementation(platform("androidx.compose:compose-bom:2024.04.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
 }
+//    implementation(libs.dagger)
+//    kapt(libs.dagger.compiler)

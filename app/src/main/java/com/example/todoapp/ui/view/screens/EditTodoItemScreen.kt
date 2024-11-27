@@ -1,6 +1,5 @@
 package com.example.todoapp.ui.view.screens
 
-import android.util.Log
 import androidx.compose.animation.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

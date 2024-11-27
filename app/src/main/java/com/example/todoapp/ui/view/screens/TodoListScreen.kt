@@ -3,7 +3,6 @@ package com.example.todoapp.ui.view.screens
 import android.app.Application
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -427,7 +426,6 @@ private fun previewViewModel(): TodoListViewModel {
     }
 
     return TodoListViewModel(
-        application = context.applicationContext as Application,
         todoItemRepository = mockRepository,
         userPreferencesRepository = mockUserPreferencesRepository,
         networkStatusTracker = mockNetworkStatusTracker

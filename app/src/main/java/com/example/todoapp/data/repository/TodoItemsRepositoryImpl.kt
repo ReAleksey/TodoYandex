@@ -11,8 +11,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class TodoItemsRepositoryImpl(
+class TodoItemsRepositoryImpl @Inject constructor (
     private val localDataSource: LocalDataSource,
     private val remoteDataSource: RemoteDataSource
 ) : TodoItemRepository {
