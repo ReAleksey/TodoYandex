@@ -11,6 +11,7 @@ plugins {
 //    id("org.jetbrains.kotlin.kapt")
 //    id("org.jetbrains.compose")
 
+    id("org.jetbrains.kotlin.plugin.serialization")
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.compose")
@@ -109,7 +110,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.logging.interceptor)
-    implementation(libs.kotlinx.serialization.json.v173)
+//    implementation(libs.kotlinx.serialization.json.v173)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.accompanist.swiperefresh)
@@ -130,6 +131,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+//    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
 }
 //    implementation(libs.dagger)
 //    kapt(libs.dagger.compiler)
